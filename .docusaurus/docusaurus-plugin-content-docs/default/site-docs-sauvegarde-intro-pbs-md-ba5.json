@@ -1,0 +1,18 @@
+{
+  "id": "sauvegarde/intro-pbs",
+  "title": "Introduction à Proxmox Backup Server",
+  "description": "Proxmox Backup Server (PBS) est une solution de sauvegarde d'entreprise optimisée pour l'environnement Proxmox VE. Cette documentation vous guidera à travers l'installation, la configuration et l'utilisation de PBS.",
+  "source": "@site/docs/sauvegarde/intro-pbs.md",
+  "sourceDirName": "sauvegarde",
+  "slug": "/sauvegarde/intro-pbs",
+  "permalink": "/docs/sauvegarde/intro-pbs",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/votre-organisation/proxmox-docs/tree/main/docs/sauvegarde/intro-pbs.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  }
+}

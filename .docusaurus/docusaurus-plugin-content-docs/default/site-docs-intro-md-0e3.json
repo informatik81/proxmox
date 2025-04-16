@@ -1,0 +1,18 @@
+{
+  "id": "intro",
+  "title": "Introduction",
+  "description": "Bienvenue dans la documentation complète de Proxmox VE et Proxmox Backup Server (PBS). Ce site a été conçu pour vous fournir une base de connaissances avancée en français sur ces deux solutions.",
+  "source": "@site/docs/intro.md",
+  "sourceDirName": ".",
+  "slug": "/intro",
+  "permalink": "/docs/intro",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/votre-organisation/proxmox-docs/tree/main/docs/intro.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  }
+}

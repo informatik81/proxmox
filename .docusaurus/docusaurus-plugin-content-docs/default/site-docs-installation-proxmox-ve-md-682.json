@@ -1,0 +1,18 @@
+{
+  "id": "installation/proxmox-ve",
+  "title": "Installation de Proxmox VE",
+  "description": "Ce guide vous explique comment installer Proxmox Virtual Environment sur votre serveur.",
+  "source": "@site/docs/installation/proxmox-ve.md",
+  "sourceDirName": "installation",
+  "slug": "/installation/proxmox-ve",
+  "permalink": "/docs/installation/proxmox-ve",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/votre-organisation/proxmox-docs/tree/main/docs/installation/proxmox-ve.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "sauvegarde/securite-pbs",
+  "title": "Sécurité de Proxmox Backup Server",
+  "description": "Ce document détaille les aspects de sécurité de Proxmox Backup Server (PBS) et fournit des recommandations pour sécuriser votre infrastructure de sauvegarde.",
+  "source": "@site/docs/sauvegarde/securite-pbs.md",
+  "sourceDirName": "sauvegarde",
+  "slug": "/sauvegarde/securite-pbs",
+  "permalink": "/docs/sauvegarde/securite-pbs",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/votre-organisation/proxmox-docs/tree/main/docs/sauvegarde/securite-pbs.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 7,
+  "frontMatter": {
+    "sidebar_position": 7
+  }
+}

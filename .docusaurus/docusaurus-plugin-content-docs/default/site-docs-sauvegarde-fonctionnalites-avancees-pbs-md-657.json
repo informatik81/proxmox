@@ -1,0 +1,18 @@
+{
+  "id": "sauvegarde/fonctionnalites-avancees-pbs",
+  "title": "Fonctionnalités avancées de Proxmox Backup Server",
+  "description": "Ce document présente les fonctionnalités avancées de Proxmox Backup Server (PBS) qui permettent d'optimiser votre infrastructure de sauvegarde et de l'adapter à des besoins spécifiques.",
+  "source": "@site/docs/sauvegarde/fonctionnalites-avancees-pbs.md",
+  "sourceDirName": "sauvegarde",
+  "slug": "/sauvegarde/fonctionnalites-avancees-pbs",
+  "permalink": "/docs/sauvegarde/fonctionnalites-avancees-pbs",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/votre-organisation/proxmox-docs/tree/main/docs/sauvegarde/fonctionnalites-avancees-pbs.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 6,
+  "frontMatter": {
+    "sidebar_position": 6
+  }
+}

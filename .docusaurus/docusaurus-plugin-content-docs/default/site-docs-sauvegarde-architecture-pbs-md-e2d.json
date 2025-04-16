@@ -1,0 +1,18 @@
+{
+  "id": "sauvegarde/architecture-pbs",
+  "title": "Architecture de Proxmox Backup Server",
+  "description": "Ce document détaille l'architecture technique de Proxmox Backup Server (PBS) et explique comment ses différents composants fonctionnent ensemble pour fournir une solution de sauvegarde robuste et efficace.",
+  "source": "@site/docs/sauvegarde/architecture-pbs.md",
+  "sourceDirName": "sauvegarde",
+  "slug": "/sauvegarde/architecture-pbs",
+  "permalink": "/docs/sauvegarde/architecture-pbs",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/votre-organisation/proxmox-docs/tree/main/docs/sauvegarde/architecture-pbs.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 5,
+  "frontMatter": {
+    "sidebar_position": 5
+  }
+}

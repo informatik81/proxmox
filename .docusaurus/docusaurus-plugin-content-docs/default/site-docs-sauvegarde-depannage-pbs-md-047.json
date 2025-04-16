@@ -1,0 +1,18 @@
+{
+  "id": "sauvegarde/depannage-pbs",
+  "title": "Dépannage de Proxmox Backup Server",
+  "description": "Ce document présente les problèmes courants rencontrés avec Proxmox Backup Server (PBS) et leurs solutions. Il vous aidera à diagnostiquer et résoudre efficacement les incidents sur votre infrastructure de sauvegarde.",
+  "source": "@site/docs/sauvegarde/depannage-pbs.md",
+  "sourceDirName": "sauvegarde",
+  "slug": "/sauvegarde/depannage-pbs",
+  "permalink": "/docs/sauvegarde/depannage-pbs",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/votre-organisation/proxmox-docs/tree/main/docs/sauvegarde/depannage-pbs.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 8,
+  "frontMatter": {
+    "sidebar_position": 8
+  }
+}

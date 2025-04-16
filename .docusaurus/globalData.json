@@ -1,0 +1,86 @@
+{
+  "docusaurus-plugin-content-docs": {
+    "default": {
+      "path": "/docs",
+      "versions": [
+        {
+          "name": "current",
+          "label": "Next",
+          "isLast": true,
+          "path": "/docs",
+          "mainDocId": "installation/pbs-installation",
+          "docs": [
+            {
+              "id": "installation/pbs-installation",
+              "path": "/docs/installation/pbs-installation",
+              "sidebar": "tutorials"
+            },
+            {
+              "id": "installation/proxmox-ve",
+              "path": "/docs/installation/proxmox-ve"
+            },
+            {
+              "id": "intro",
+              "path": "/docs/intro"
+            },
+            {
+              "id": "sauvegarde/architecture-pbs",
+              "path": "/docs/sauvegarde/architecture-pbs"
+            },
+            {
+              "id": "sauvegarde/cas-utilisation-pbs",
+              "path": "/docs/sauvegarde/cas-utilisation-pbs"
+            },
+            {
+              "id": "sauvegarde/configuration-pbs",
+              "path": "/docs/sauvegarde/configuration-pbs"
+            },
+            {
+              "id": "sauvegarde/depannage-pbs",
+              "path": "/docs/sauvegarde/depannage-pbs"
+            },
+            {
+              "id": "sauvegarde/fonctionnalites-avancees-pbs",
+              "path": "/docs/sauvegarde/fonctionnalites-avancees-pbs"
+            },
+            {
+              "id": "sauvegarde/installation-pbs",
+              "path": "/docs/sauvegarde/installation-pbs"
+            },
+            {
+              "id": "sauvegarde/intro-pbs",
+              "path": "/docs/sauvegarde/intro-pbs"
+            },
+            {
+              "id": "sauvegarde/pbs-synology",
+              "path": "/docs/sauvegarde/pbs-synology",
+              "sidebar": "tutorials"
+            },
+            {
+              "id": "sauvegarde/securite-pbs",
+              "path": "/docs/sauvegarde/securite-pbs"
+            },
+            {
+              "id": "sauvegarde/tutorials",
+              "path": "/docs/sauvegarde/tutorials"
+            },
+            {
+              "id": "sauvegarde/utilisation-pbs",
+              "path": "/docs/sauvegarde/utilisation-pbs"
+            }
+          ],
+          "draftIds": [],
+          "sidebars": {
+            "tutorials": {
+              "link": {
+                "path": "/docs/installation/pbs-installation",
+                "label": "installation/pbs-installation"
+              }
+            }
+          }
+        }
+      ],
+      "breadcrumbs": true
+    }
+  }
+}

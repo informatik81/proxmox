@@ -1,0 +1,20 @@
+{
+  "id": "sauvegarde/pbs-synology",
+  "title": "Configuration des sauvegardes vers un NAS Synology",
+  "description": "Prérequis",
+  "source": "@site/docs/sauvegarde/pbs-synology.md",
+  "sourceDirName": "sauvegarde",
+  "slug": "/sauvegarde/pbs-synology",
+  "permalink": "/docs/sauvegarde/pbs-synology",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/votre-organisation/proxmox-docs/tree/main/docs/sauvegarde/pbs-synology.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorials",
+  "previous": {
+    "title": "Installation de Proxmox Backup Server",
+    "permalink": "/docs/installation/pbs-installation"
+  }
+}

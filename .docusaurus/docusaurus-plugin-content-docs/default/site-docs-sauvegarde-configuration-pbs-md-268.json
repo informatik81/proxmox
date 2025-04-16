@@ -1,0 +1,18 @@
+{
+  "id": "sauvegarde/configuration-pbs",
+  "title": "Configuration de Proxmox Backup Server",
+  "description": "Après avoir installé Proxmox Backup Server, vous devez le configurer pour commencer à l'utiliser. Ce guide vous explique les étapes essentielles de configuration.",
+  "source": "@site/docs/sauvegarde/configuration-pbs.md",
+  "sourceDirName": "sauvegarde",
+  "slug": "/sauvegarde/configuration-pbs",
+  "permalink": "/docs/sauvegarde/configuration-pbs",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/votre-organisation/proxmox-docs/tree/main/docs/sauvegarde/configuration-pbs.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 3,
+  "frontMatter": {
+    "sidebar_position": 3
+  }
+}

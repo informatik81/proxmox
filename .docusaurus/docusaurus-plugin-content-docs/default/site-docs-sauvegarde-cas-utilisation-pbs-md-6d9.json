@@ -1,0 +1,18 @@
+{
+  "id": "sauvegarde/cas-utilisation-pbs",
+  "title": "Cas d'utilisation de Proxmox Backup Server",
+  "description": "Ce document présente différents cas d'utilisation de Proxmox Backup Server (PBS) dans des environnements professionnels variés. Il vous aidera à comprendre comment PBS peut être déployé pour répondre à des besoins spécifiques.",
+  "source": "@site/docs/sauvegarde/cas-utilisation-pbs.md",
+  "sourceDirName": "sauvegarde",
+  "slug": "/sauvegarde/cas-utilisation-pbs",
+  "permalink": "/docs/sauvegarde/cas-utilisation-pbs",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/votre-organisation/proxmox-docs/tree/main/docs/sauvegarde/cas-utilisation-pbs.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 9,
+  "frontMatter": {
+    "sidebar_position": 9
+  }
+}

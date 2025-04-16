@@ -1,0 +1,18 @@
+{
+  "id": "sauvegarde/utilisation-pbs",
+  "title": "Utilisation de Proxmox Backup Server",
+  "description": "Ce guide vous explique comment utiliser Proxmox Backup Server au quotidien pour sauvegarder et restaurer vos machines virtuelles et conteneurs.",
+  "source": "@site/docs/sauvegarde/utilisation-pbs.md",
+  "sourceDirName": "sauvegarde",
+  "slug": "/sauvegarde/utilisation-pbs",
+  "permalink": "/docs/sauvegarde/utilisation-pbs",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/votre-organisation/proxmox-docs/tree/main/docs/sauvegarde/utilisation-pbs.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 4,
+  "frontMatter": {
+    "sidebar_position": 4
+  }
+}

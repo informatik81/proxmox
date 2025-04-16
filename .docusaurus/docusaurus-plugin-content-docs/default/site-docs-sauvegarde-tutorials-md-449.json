@@ -1,0 +1,15 @@
+{
+  "id": "sauvegarde/tutorials",
+  "title": "Tutoriels Vidéo",
+  "description": "Dans cette section, vous trouverez des vidéos tutoriels en français sur Proxmox et PBS.",
+  "source": "@site/docs/sauvegarde/tutorials.md",
+  "sourceDirName": "sauvegarde",
+  "slug": "/sauvegarde/tutorials",
+  "permalink": "/docs/sauvegarde/tutorials",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/votre-organisation/proxmox-docs/tree/main/docs/sauvegarde/tutorials.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {}
+}
