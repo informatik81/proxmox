@@ -20,32 +20,32 @@ class ScaledDraw:
 
     def __init__(self, draw: ImageDraw.ImageDraw, scale: int) -> None:
         self._d = draw
-        self._s = scale
+        self.scale = scale
 
     def _s(self, pts):
-        return [v * self._s for v in pts]
+        return [v * self.scale for v in pts]
 
     def rectangle(self, box, **kw):
-        kw["width"] = kw.get("width", 1) * self._s
+        kw["width"] = kw.get("width", 1) * self.scale
         self._d.rectangle(self._s(box), **kw)
 
     def rounded_rectangle(self, box, radius=0, **kw):
-        kw["width"] = kw.get("width", 1) * self._s
-        self._d.rounded_rectangle(self._s(box), radius=radius * self._s, **kw)
+        kw["width"] = kw.get("width", 1) * self.scale
+        self._d.rounded_rectangle(self._s(box), radius=radius * self.scale, **kw)
 
     def ellipse(self, box, **kw):
-        kw["width"] = kw.get("width", 1) * self._s
+        kw["width"] = kw.get("width", 1) * self.scale
         self._d.ellipse(self._s(box), **kw)
 
     def line(self, pts, **kw):
-        kw["width"] = kw.get("width", 1) * self._s
+        kw["width"] = kw.get("width", 1) * self.scale
         self._d.line(self._s(pts), **kw)
 
     def text(self, xy, txt, font=None, fill=None, anchor=None, **kw):
         self._d.text(self._s(xy), txt, font=font, fill=fill, anchor=anchor, **kw)
 
     def textlength(self, txt, font=None):
-        return self._d.textlength(txt, font=font) / self._s
+        return self._d.textlength(txt, font=font) / self.scale
 
 BG = "#121417"
 PANEL = "#1b1f24"
