@@ -395,6 +395,22 @@ class PatchSession:
         logger.info("Sauvegarde créée : %s", backup)
         return backup
 
+    def reload_original(self) -> None:
+        """Annule toutes les modifications de la session (retour au fichier tel que chargé)."""
+        if not self.is_loaded:
+            raise PatchError("Aucun fichier chargé.")
+        self.data = bytearray(self.original)
+        self.diffs = []
+        logger.info("Retour au fichier d'origine : modifications de session annulées.")
+
+    def restore_backup(self, path: Path) -> EcuIdentity:
+        """Restaure une sauvegarde ``.bak`` : la charge comme nouveau fichier courant.
+
+        Une nouvelle sauvegarde du fichier courant est créée au passage, ce qui
+        rend l'opération réversible à tout moment.
+        """
+        return self.load(Path(path))
+
     def match_score(self, definition: EcuDefinition) -> int:
         """Score de compatibilité entre le dump chargé et une définition."""
         if not self.is_loaded:

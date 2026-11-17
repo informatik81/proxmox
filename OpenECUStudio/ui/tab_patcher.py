@@ -62,7 +62,15 @@ class PatcherTab(QWidget):
         load_button = QPushButton("Charger un fichier ECU")
         load_button.setObjectName("primary")
         load_button.clicked.connect(self._on_load_file)
+        restore_button = QPushButton("Restaurer une sauvegarde .bak")
+        restore_button.setToolTip("Recharge un fichier de sauvegarde (retour à l'état d'origine d'un dump).")
+        restore_button.clicked.connect(self._on_restore_backup)
+        revert_button = QPushButton("Annuler les modifications (session)")
+        revert_button.setToolTip("Revenir au fichier tel que chargé, en annulant tous les patchs de la session.")
+        revert_button.clicked.connect(self._on_revert_original)
         file_buttons.addWidget(load_button)
+        file_buttons.addWidget(restore_button)
+        file_buttons.addWidget(revert_button)
         self.file_label = QLabel("Aucun fichier chargé.")
         self.file_label.setObjectName("statusLabel")
         file_buttons.addWidget(self.file_label, 1)
@@ -157,8 +165,32 @@ class PatcherTab(QWidget):
         )
         if not path:
             return
+        self._load_path(Path(path))
+
+    def _on_restore_backup(self) -> None:
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Restaurer une sauvegarde", "", "Sauvegardes (*.bak);;Tous les fichiers (*)"
+        )
+        if not path:
+            return
+        self._load_path(Path(path))
+
+    def _on_revert_original(self) -> None:
+        if not self.session.is_loaded:
+            QMessageBox.information(self, "OpenECU Studio", "Chargez d'abord un fichier ECU.")
+            return
+        if not self.session.diffs:
+            QMessageBox.information(self, "OpenECU Studio", "Aucune modification à annuler.")
+            return
+        self.session.reload_original()
+        self._on_scan_dtcs()
+        self._update_checksum_label()
+        self.diffs_updated.emit(list(self.session.diffs))
+        QMessageBox.information(self, "OpenECU Studio", "Fichier revenu à son état d'origine (0 modification).")
+
+    def _load_path(self, path: Path) -> None:
         try:
-            identity = self.session.load(Path(path))
+            identity = self.session.load(path)
         except (OSError, PatchError) as exc:
             QMessageBox.critical(self, "Erreur de chargement", str(exc))
             return
