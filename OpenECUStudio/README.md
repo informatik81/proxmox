@@ -76,6 +76,19 @@ les entrées « SM2 » / « Scanmatik » en tête de liste.
 
 ## 4. Installation du projet et lancement
 
+### Option rapide — un seul fichier à exécuter
+
+Double-cliquez sur **`INSTALLER_OPENECU.bat`** (dans le dossier `OpenECUStudio`). Il fait tout, dans l'ordre :
+
+1. détecte un Python 32 bits ; s'il n'existe pas, **télécharge et installe automatiquement Python 3.11.9 (32 bits)** depuis python.org ;
+2. crée un environnement virtuel `.venv32` et installe les dépendances (PySide6, PyInstaller) ;
+3. compile `dist\OpenECU_Studio.exe` (PyInstaller) et copie `definitions/` à côté de l'exe ;
+4. lance l'application.
+
+En cas d'erreur, le message affiché indique l'étape exacte à corriger.
+
+### Option manuelle
+
 ```bat
 cd OpenECUStudio
 python -m pip install -r requirements.txt
