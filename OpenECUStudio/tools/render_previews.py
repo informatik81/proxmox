@@ -295,5 +295,124 @@ def render_tab2(path):
     print("OK", path)
 
 
-render_tab1("/workspace/OpenECUStudio/docs/preview_onglet1_diagnostic.png")
-render_tab2("/workspace/OpenECUStudio/docs/preview_onglet2_patcher.png")
+# ==========================================================================
+# Onglet 3 : Comparateur Hexadécimal
+# ==========================================================================
+def render_tab3(path):
+    img, d = base_window(2)
+    top = TITLE_H + TAB_H + 12
+    gb_h = H - top - 80
+    groupbox(d, 10, top, W - 20, gb_h, "Octets modifiés (Offset | Original | Modifié)")
+    d.text((24, top + 20), "Filtre :", font=font(FONT, 11), fill=TEXT)
+    input_box(d, 80, top + 14, 400, 26, "")
+    d.text((500, top + 20), "12 modification(s) affichée(s) / 12 total", font=font(FONT, 10), fill=DIM)
+    cols = [30, 400, 700]
+    for cx, hd in zip(cols, ["Offset", "Original", "Modifié"]):
+        d.text((cx + 6, top + 52), hd, font=font(FONT_B, 11), fill=ACCENT)
+    d.line([20, top + 74, W - 20, top + 74], fill=BORDER)
+    rows = [
+        ("0x003000", "0x31", "0x56"), ("0x003001", "0x46", "0x46"), ("0x003008", "0x41", "0x5A"),
+        ("0x003009", "0x42", "0x5A"), ("0x00300A", "0x42", "0x5A"), ("0x00300F", "0x31", "0x36"),
+        ("0x040000", "0x31", "0x56"), ("0x040008", "0x41", "0x5A"), ("0x040009", "0x42", "0x5A"),
+        ("0x04000A", "0x42", "0x5A"), ("0x100003", "0x2F", "0x00"), ("0x100007", "0x2F", "0x00"),
+    ]
+    for i, (off, orig, mod) in enumerate(rows):
+        ry = top + 82 + i * 20
+        if i % 2 == 1:
+            d.rectangle([20, ry - 3, W - 20, ry + 16], fill="#14181d")
+        d.text((cols[0] + 6, ry), off, font=font(MONO, 11), fill=TEXT)
+        d.text((cols[1] + 6, ry), orig, font=font(MONO, 11), fill=TEXT)
+        d.text((cols[2] + 6, ry), mod, font=font(MONO, 11), fill=ACCENT)
+    ey = H - 66
+    button(d, 10, ey, 210, 30, "Exporter le .bin patché", primary=True)
+    d.text((232, ey + 8), "Vérifiez le checksum avant export.", font=font(FONT, 10), fill=ERR)
+    img.save(path)
+    print("OK", path)
+
+
+# ==========================================================================
+# Onglet 4 : Gestionnaire de Définitions
+# ==========================================================================
+def render_tab4(path):
+    img, d = base_window(3)
+    top = TITLE_H + TAB_H + 12
+    gb_h = H - top - 60
+
+    groupbox(d, 10, top, 340, gb_h, "Définitions installées")
+    files = ["bosch_edc17_generic_dtc.json", "psa_sid807_egr_dpf.json"]
+    for i, name in enumerate(files):
+        ly = top + 20 + i * 26
+        sel = i == 0
+        if sel:
+            d.rounded_rectangle([20, ly - 3, 330, ly + 19], radius=3, fill="#2a3140")
+        d.text((30, ly), name, font=font(MONO, 11), fill=ACCENT if sel else TEXT)
+    by = top + gb_h - 100
+    button(d, 24, by, 90, 26, "Recharger")
+    button(d, 122, by, 120, 26, "Nouveau (modèle)")
+    button(d, 24, by + 34, 130, 26, "Importer un .json")
+
+    rx = 360
+    groupbox(d, rx, top, W - rx - 10, gb_h, "Éditeur JSON (validé à l'enregistrement)")
+    ex, ey_ = rx + 14, top + 16
+    d.rounded_rectangle([ex, ey_, W - 24, top + gb_h - 90], radius=4, fill=CONSOLE, outline=BORDER)
+    json_lines = [
+      '{',
+      '  "schema_version": 1,',
+      '  "definition_id": "bosch_edc17_generic_dtc",',
+      '  "name": "Bosch EDC17 — DTC Remover générique (modèle)",',
+      '  "manufacturer": "Bosch",',
+      '  "ecu_families": ["EDC17C10", "EDC17C60", "EDC17CP44"],',
+      '  "match": {',
+      '    "id_patterns": ["EDC17"],',
+      '    "min_size": 1048576,',
+      '    "max_size": 8388608',
+      '  },',
+      '  "solutions": [',
+      '    {',
+      '      "id": "egr_off",',
+      '      "label": "EGR Off",',
+      '      "patches": [',
+      '        {',
+      '          "name": "EGR — contrôle d\'activation",',
+      '          "find":    "48 8B ?? ?? 00 00 66 85 ?? 74 ??",',
+      '          "replace": "48 8B ?? ?? 00 00 66 85 ?? EB ??"',
+      '        }',
+      '      ]',
+      '    }',
+      '  ],',
+      '  "dtc_tables": [ ... ]',
+      '}',
+    ]
+    for i, line in enumerate(json_lines):
+        d.text((ex + 10, ey_ + 8 + i * 17), line, font=font(MONO, 10), fill="#9fd49f")
+    vy2 = top + gb_h - 78
+    d.text((ex, vy2), "✔ Valide : Bosch EDC17 — DTC Remover générique (modèle) — 4 solution(s), 2 table(s) DTC.",
+           font=font(FONT, 10), fill=OK)
+    button(d, ex, vy2 + 18, 150, 28, "Valider la syntaxe")
+    button(d, ex + 160, vy2 + 18, 130, 28, "Enregistrer", primary=True)
+    d.text((10, H - 40), "Astuce : les définitions sont des fichiers JSON dans le dossier 'definitions/' à côté de l'exécutable — ajoutez-en sans recompiler.",
+           font=font(FONT, 10), fill=DIM)
+    img.save(path)
+    print("OK", path)
+
+
+# ==========================================================================
+# Gros plans (crops haute résolution depuis les rendus 2x)
+# ==========================================================================
+def crop(src, box_logical, dst):
+    img = Image.open(src)
+    x0, y0, x1, y1 = [v * S for v in box_logical]
+    img.crop((x0, y0, x1, y1)).save(dst)
+    print("OK", dst)
+
+
+OUT = "/workspace/OpenECUStudio/docs/"
+render_tab1(OUT + "preview_onglet1_diagnostic.png")
+render_tab2(OUT + "preview_onglet2_patcher.png")
+render_tab3(OUT + "preview_onglet3_comparateur.png")
+render_tab4(OUT + "preview_onglet4_definitions.png")
+
+crop(OUT + "preview_onglet1_diagnostic.png", (400, 150, 1260, 460), OUT + "zoom_uds_resultats.png")
+crop(OUT + "preview_onglet1_diagnostic.png", (10, 462, 1270, 830), OUT + "zoom_console_trames.png")
+crop(OUT + "preview_onglet2_patcher.png", (10, 74, 1270, 230), OUT + "zoom_identite_vin.png")
+crop(OUT + "preview_onglet2_patcher.png", (420, 336, 1270, 780), OUT + "zoom_table_dtc.png")
