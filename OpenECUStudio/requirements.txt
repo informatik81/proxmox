@@ -1,0 +1,5 @@
+# OpenECU Studio — dépendances
+# IMPORTANT : installer sous Python 3.11 **32 bits (x86)** sous Windows 10
+# (la DLL J2534 Scanmatik smj2534.dll est 32 bits — voir README.md).
+PySide6>=6.6.0,<7.0.0
+pyinstaller>=6.3.0,<7.0.0

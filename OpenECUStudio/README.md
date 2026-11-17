@@ -1,0 +1,220 @@
+# OpenECU Studio
+
+Application desktop Windows 10 en **Python 3.11 (32 bits)** + **PySide6** pour :
+
+1. **Diagnostic temps réel** via une interface matérielle **Scanmatik 2 Pro (SM2 Pro)** — API standard **SAE J2534-1** (`smj2534.dll`), couche **ISO-TP (ISO 15765-2)** et **UDS (ISO 14229)**.
+2. **Édition offline de fichiers binaires ECU** (`.bin` / `.ori`) : détection de famille (Bosch EDC17, Siemens/Continental SID807/PCR2.1, Delphi DCM6.2, Marelli MJ8/MJ9), **DTC Remover**, solutions EGR/DPF/AdBlue/Swirl par signatures hexadécimales pilotées par des définitions JSON, comparateur hexadécimal et surveillance des checksums.
+
+> ⚠️ **AVERTISSEMENT LÉGAL ET SÉCURITÉ**
+> La modification des systèmes antipollution (EGR, DPF/FAP, SCR/AdBlue) et la désactivation de codes défauts sur un véhicule **circulant sur voie publique est interdite** dans la plupart des pays (UE : règlement (UE) 2018/858, France : code de la route art. R318-4, contrôle technique...). OpenECU Studio est fourni à des fins **d'ingénierie, de diagnostic, de recherche et d'usage piste/circuit/racing** uniquement. L'utilisateur est seul responsable de l'usage qu'il en fait et de la conformité à la législation de son pays. Toute écriture dans un ECU réel se fait **à vos risques et périls** : un flash mal préparé (checksum non corrigé, mauvais fichier) peut rendre le calculateur inutilisable (bricked).
+
+---
+
+## Sommaire
+
+1. [Prérequis](#1-prérequis)
+2. [Installation de Python 3.11 32 bits (OBLIGATOIRE)](#2-installation-de-python-311-32-bits-obligatoire)
+3. [Installation des pilotes Scanmatik SM2 Pro](#3-installation-des-pilotes-scanmatik-sm2-pro)
+4. [Installation du projet et lancement](#4-installation-du-projet-et-lancement)
+5. [Utilisation](#5-utilisation)
+6. [Compilation de l'exécutable (.exe)](#6-compilation-de-lexécutable-exe)
+7. [Format des définitions JSON](#7-format-des-définitions-json)
+8. [Architecture du code](#8-architecture-du-code)
+9. [Dépannage](#9-dépannage)
+
+---
+
+## 1. Prérequis
+
+| Élément | Détail |
+|---|---|
+| OS | Windows 10 / 11 (x86 ou x64 — voir section 2) |
+| Python | **3.11 32 bits (x86)** — obligatoire pour le J2534 matériel |
+| Interface | Scanmatik 2 Pro (SM2 Pro) + pilotes PassThru 04.04 installés |
+| Véhicule | OBD2 (CAN 500 kbps, broches 6/14 ; VBatt broche 16) |
+
+**Pourquoi 32 bits ?** La DLL officielle Scanmatik `smj2534.dll` est une bibliothèque **32 bits**, enregistrée sous :
+
+```
+HKLM\SOFTWARE\WOW6432Node\PassThruSupport.04.04
+```
+
+Un processus 64 bits ne peut pas charger une DLL 32 bits : `ctypes.WinDLL` lèverait
+`OSError: [WinError 193] %1 n'est pas une application Win32 valide`.
+Toute la chaîne (Python + PyInstaller + exe) doit donc être **x86**.
+
+## 2. Installation de Python 3.11 32 bits (OBLIGATOIRE)
+
+1. Téléchargez **Python 3.11.x « Windows installer (32-bit) »** depuis <https://www.python.org/downloads/windows/> (fichier `python-3.11.x.exe` dont le nom contient *32-bit*).
+2. Lancez l'installeur et **cochez** :
+   - `Add python.exe to PATH`
+   - `Install for all users`
+3. Vérifiez l'architecture dans un **nouveau** terminal :
+
+```bat
+python -c "import struct,sys; print(sys.version); print('bits =', struct.calcsize('P')*8)"
+:: doit afficher : bits = 32
+```
+
+Si vous gardez aussi un Python 64 bits, utilisez le lanceur py :
+`py -3.11-32` ou le chemin complet `C:\Users\<vous>\AppData\Local\Programs\Python\Python311-32\python.exe`.
+
+## 3. Installation des pilotes Scanmatik SM2 Pro
+
+1. Branchez la SM2 Pro en USB (sans la connecter au véhicule).
+2. Installez le paquet de pilotes Scanmatik (CD fourni ou site officiel Scanmatik) qui enregistre
+   `smj2534.dll` dans le registre sous `HKLM\SOFTWARE\WOW6432Node\PassThruSupport.04.04`.
+3. Vérifiez la présence de la clé (Win+R → `regedit`) :
+
+```
+HKLM\SOFTWARE\WOW6432Node\PassThruSupport.04.04\SM2 USB
+   FunctionType = C:\...\smj2534.dll
+```
+
+OpenECU Studio énumère automatiquement toutes les interfaces PassThru 04.04 et place
+les entrées « SM2 » / « Scanmatik » en tête de liste.
+
+## 4. Installation du projet et lancement
+
+```bat
+cd OpenECUStudio
+python -m pip install -r requirements.txt
+python main.py
+```
+
+Sans SM2 Pro branchée, choisissez dans l'onglet Diagnostic l'entrée
+**« Simulation / Mock J2534 (sans matériel) »** : un EDC17C10 fictif répond aux
+requêtes UDS (VIN, N° HW/SW, DTC P0401/P2002/P2463/P2263, effacement) pour tester
+toute la chaîne sans véhicule.
+
+## 5. Utilisation
+
+### Onglet 1 — Diagnostic & SM2 Pro (J2534)
+- **Interface** : sélection + connexion (ISO 15765, 500 kbps, 0x7E0/0x7E8).
+- **VBatt** : tension batterie lue en temps réel (1 Hz) via `PassThruIoctl(READ_VBATT)`.
+- **Identifier ECU (UDS)** : session étendue `10 03` puis `22 F190` (VIN), `22 F191` (N° HW), `22 F195` (N° SW).
+- **Lire/Effacer les DTC** : `19 02 FF` (reportDTCByStatusMask) et `14 FF FF FF` (ClearDiagnosticInformation).
+- **Console** : toutes les trames CAN/UDS brutes (TX/RX) horodatées.
+
+### Onglet 2 — Éditeur ECU & Patcher (Offline)
+1. **Charger un fichier ECU** : une sauvegarde horodatée `.bak` est créée **immédiatement** (ex. `dump_20250101_120000.bak`) avant toute modification.
+2. La **fiche d'identité** (famille détectée, entropie, n° de pièce, SHA-256) s'affiche ; la définition la plus compatible est sélectionnée automatiquement.
+3. Cochez les **solutions** (EGR Off, DPF Off, AdBlue Off, Swirl Flaps Off) définies dans le JSON puis **Appliquer**.
+4. **DTC Remover** : cliquez *Scanner* — chaque code (ex. `P0401`, `P2002`, `P2463`) est listé avec son **offset hexadécimal** ; utilisez la barre de recherche, sélectionnez les lignes puis **Désactiver les DTC sélectionnés** (octet switch mis à `0x00`).
+
+### Onglet 3 — Comparateur Hexadécimal
+Table `Offset | Original | Modifié` de tous les octets changés, filtrable, avec export final du `.bin` patché (l'export sauvegarde aussi un fichier existant en `.bak` et affiche l'**état des checksums**).
+
+### Onglet 4 — Gestionnaire de Définitions
+Éditeur JSON intégré avec validation : créez/importez de nouvelles définitions pour d'autres calculateurs **sans recompiler** (les fichiers vivent dans `definitions/` à côté de l'exe).
+
+## 6. Compilation de l'exécutable (.exe)
+
+Depuis l'environnement **Python 3.11 32 bits** :
+
+```bat
+build.bat
+```
+
+Le script vérifie l'architecture (il refuse un Python 64 bits), installe les dépendances puis lance PyInstaller avec `build_windows.spec` (mode `--onefile --windowed`, dossier `definitions/` embarqué) :
+
+```
+dist\OpenECU_Studio.exe
+```
+
+Pour un build manuel : `python -m PyInstaller --clean --noconfirm build_windows.spec`.
+Copiez (ou laissez l'utilisateur éditer) le dossier `definitions/` à côté de l'exe pour ajouter des définitions après compilation.
+
+## 7. Format des définitions JSON
+
+```jsonc
+{
+  "schema_version": 1,
+  "definition_id": "mon_calculateur",
+  "name": "Nom affiché",
+  "manufacturer": "Bosch",
+  "ecu_families": ["EDC17C10"],
+  "match": {
+    "id_patterns": ["EDC17"],       // chaînes ASCII cherchées dans le dump
+    "min_size": 1048576,             // plage de tailles acceptées (octets)
+    "max_size": 8388608
+  },
+  "checksum": {
+    "notes": "Avertissement affiché avant export",
+    "regions": [                     // algorithmes disponibles : crc32, sum16, sum32, twos_complement32
+      {"algorithm": "crc32", "start": 0, "length": 2097152, "storage_offset": null, "endianness": "little"}
+    ]
+  },
+  "solutions": [
+    {
+      "id": "egr_off",
+      "label": "EGR Off",
+      "category": "antipollution",
+      "description": "...",
+      "patches": [
+        {
+          "name": "Nom du patch",
+          "find":    "48 8B ?? ?? 00 00 74 ??",   // ?? = wildcard (octet quelconque)
+          "replace": "48 8B ?? ?? 00 00 EB ??",   // ?? = octet d'origine conservé
+          "description": "JZ -> JMP"
+        }
+      ]
+    }
+  ],
+  "dtc_tables": [
+    {
+      "name": "Table DTC principale",
+      "entry_size": 4,          // octets par entrée DTC
+      "code_offset": 0,         // offset du code (2 octets) dans l'entrée
+      "switch_offset": 3,       // offset de l'octet d'activation (mis à 0x00)
+      "byte_order": "big",      // encodage du code DTC (SAE J2012 : P0401 = 04 01)
+      "locator": null,          // motif hexa optionnel localisant la table (sinon scan brut)
+      "min_entries": 8          // densité minimale pour valider une table
+    }
+  ],
+  "notes": ""
+}
+```
+
+Le **scan brut** (sans localisateur) détecte automatiquement les séquences d'au moins
+8 entrées DTC consécutives valides (format SAE J2012 : nibble système 0-3 → P/C/B/U).
+
+## 8. Architecture du code
+
+```
+OpenECUStudio/
+├── main.py                        # Point d'entrée : logging, excepthook, QApplication
+├── core/
+│   ├── j2534_driver.py            # winreg + ctypes WinDLL (ABI Win32), PASSTHRU_MSG/SCONFIG,
+│   │                              #   ISO-TP (ISO 15765-2), UDS (ISO 14229), Mock J2534
+│   ├── ecu_analyzer.py            # Détection de famille, entropie, chaînes, motifs ?? wildcards
+│   ├── patch_engine.py            # Définitions JSON, patches, DTC Remover, .bak, diffs, export
+│   └── checksum.py                # CRC32 / somme 16-32 bits / complément à 2 (extensible)
+├── ui/
+│   ├── theme.py                   # Dark Mode industriel (Fusion + QSS)
+│   ├── workers.py                 # QThread générique
+│   ├── main_window.py             # Assemblage des onglets
+│   ├── tab_diagnostics.py         # Onglet 1 : J2534, VBatt, UDS, DTC, console
+│   ├── tab_patcher.py             # Onglet 2 : dump, solutions, DTC Remover
+│   ├── tab_diff.py                # Onglet 3 : comparateur hexadécimal
+│   └── tab_definitions.py         # Onglet 4 : gestionnaire de définitions
+├── definitions/
+│   ├── bosch_edc17_generic_dtc.json
+│   └── psa_sid807_egr_dpf.json
+├── build_windows.spec             # PyInstaller (onefile, windowed)
+├── build.bat                      # Build automatisé (vérifie Python 32 bits)
+├── requirements.txt
+└── logs/                          # Journaux horodatés
+```
+
+## 9. Dépannage
+
+| Symptôme | Cause / solution |
+|---|---|
+| `OSError: [WinError 193] %1 n'est pas une application Win32 valide` | Python **64 bits** : réinstallez/relancez avec Python 3.11 **32 bits** (section 2). |
+| Aucune interface dans la liste | Pilotes Scanmatik non installés, ou clé absente de `HKLM\SOFTWARE\WOW6432Node\PassThruSupport.04.04` — réinstallez les pilotes et cliquez *Rafraîchir*. |
+| `ERR_DEVICE_NOT_CONNECTED` | Boîtier USB débranché ou occupé par une autre application ; déconnectez, rebranchez, *Rafraîchir*. |
+| `UdsTimeoutError` | Contact allumé requis, mauvais IDs (essayez 0x7E4/0x7EC sur certains véhicules), ou ECU sur un autre bus. |
+| DTC introuvable dans le dump | Le scan brut exige ≥ 8 entrées consécutives valides ; ajoutez un `locator` et les offsets réels dans la définition JSON. |
+| ECU refuse le fichier après flash | **Checksum non corrigé** : utilisez un outil de checksum dédié pour la famille (cf. avertissement dans les définitions). |
+| L'exe ne démarre pas | Lancez-le depuis un terminal pour lire l'erreur ; vérifiez que `definitions/` est présent à côté de l'exe et consultez `logs/`. |
