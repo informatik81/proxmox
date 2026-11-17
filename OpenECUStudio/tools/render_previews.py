@@ -7,6 +7,46 @@ définies dans ui/theme.py pour donner un aperçu visuel de l'application.
 """
 from PIL import Image, ImageDraw, ImageFont
 
+S = 2  # facteur de sur-échantillonnage (haute résolution pour zoom confortable)
+
+
+class ScaledDraw:
+    """Proxy ImageDraw qui multiplie toutes les coordonnées par S.
+
+    Les tailles de police sont multipliées par S ; ``textlength`` ramène la
+    valeur en unités logiques pour que les calculs de mise en page restent
+    inchangés.
+    """
+
+    def __init__(self, draw: ImageDraw.ImageDraw, scale: int) -> None:
+        self._d = draw
+        self._s = scale
+
+    def _s(self, pts):
+        return [v * self._s for v in pts]
+
+    def rectangle(self, box, **kw):
+        kw["width"] = kw.get("width", 1) * self._s
+        self._d.rectangle(self._s(box), **kw)
+
+    def rounded_rectangle(self, box, radius=0, **kw):
+        kw["width"] = kw.get("width", 1) * self._s
+        self._d.rounded_rectangle(self._s(box), radius=radius * self._s, **kw)
+
+    def ellipse(self, box, **kw):
+        kw["width"] = kw.get("width", 1) * self._s
+        self._d.ellipse(self._s(box), **kw)
+
+    def line(self, pts, **kw):
+        kw["width"] = kw.get("width", 1) * self._s
+        self._d.line(self._s(pts), **kw)
+
+    def text(self, xy, txt, font=None, fill=None, anchor=None, **kw):
+        self._d.text(self._s(xy), txt, font=font, fill=fill, anchor=anchor, **kw)
+
+    def textlength(self, txt, font=None):
+        return self._d.textlength(txt, font=font) / self._s
+
 BG = "#121417"
 PANEL = "#1b1f24"
 BORDER = "#2c333c"
@@ -31,14 +71,14 @@ MONO_B = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf"
 
 def font(path, size):
     try:
-        return ImageFont.truetype(path, size)
+        return ImageFont.truetype(path, size * S)
     except OSError:
         return ImageFont.load_default()
 
 
 def base_window(active_tab):
-    img = Image.new("RGB", (W, H), BG)
-    d = ImageDraw.Draw(img)
+    img = Image.new("RGB", (W * S, H * S), BG)
+    d = ScaledDraw(ImageDraw.Draw(img), S)
     d.rectangle([0, 0, W, TITLE_H], fill=PANEL)
     d.text((10, 6), "OpenECU Studio v1.0.0 — J2534 / UDS / ECU Patcher", font=font(FONT, 13), fill=TEXT)
     d.ellipse([W - 46, 8, W - 34, 20], outline=DIM, width=1)
