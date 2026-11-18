@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Thèmes sombre et clair pour OpenECU Studio (PySide6 / Fusion).
+"""Thèmes sombre et clair pour OpenECU Studio (PySide2 / Fusion).
 
 Chaque thème est décrit par un objet ``ThemeColors`` : la feuille de style QSS
 est générée depuis la palette, ce qui garantit un contraste cohérent (texte
@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from PySide6.QtGui import QColor, QFont, QPalette
-from PySide6.QtWidgets import QApplication
+from PySide2.QtGui import QColor, QFont, QPalette
+from PySide2.QtWidgets import QApplication
 
 
 @dataclass(frozen=True)

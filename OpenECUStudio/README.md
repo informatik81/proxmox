@@ -1,6 +1,6 @@
 # OpenECU Studio
 
-Application desktop Windows 10 en **Python 3.11 (32 bits)** + **PySide6** pour :
+Application desktop Windows 10 en **Python 3.10 (32 bits)** + **PySide2 (Qt5)** pour :
 
 1. **Diagnostic temps réel** via une interface matérielle **Scanmatik 2 Pro (SM2 Pro)** — API standard **SAE J2534-1** (`smj2534.dll`), couche **ISO-TP (ISO 15765-2)** et **UDS (ISO 14229)**.
 2. **Édition offline de fichiers binaires ECU** (`.bin` / `.ori`) : détection de famille (Bosch EDC17, Siemens/Continental SID807/PCR2.1, Delphi DCM6.2, Marelli MJ8/MJ9), **DTC Remover**, solutions EGR/DPF/AdBlue/Swirl par signatures hexadécimales pilotées par des définitions JSON, comparateur hexadécimal et surveillance des checksums.
@@ -13,7 +13,7 @@ Application desktop Windows 10 en **Python 3.11 (32 bits)** + **PySide6** pour :
 ## Sommaire
 
 1. [Prérequis](#1-prérequis)
-2. [Installation de Python 3.11 32 bits (OBLIGATOIRE)](#2-installation-de-python-311-32-bits-obligatoire)
+2. [Installation de Python 3.10 32 bits (OBLIGATOIRE)](#2-installation-de-python-310-32-bits-obligatoire)
 3. [Installation des pilotes Scanmatik SM2 Pro](#3-installation-des-pilotes-scanmatik-sm2-pro)
 4. [Installation du projet et lancement](#4-installation-du-projet-et-lancement)
 5. [Utilisation](#5-utilisation)
@@ -29,7 +29,7 @@ Application desktop Windows 10 en **Python 3.11 (32 bits)** + **PySide6** pour :
 | Élément | Détail |
 |---|---|
 | OS | Windows 10 / 11 (x86 ou x64 — voir section 2) |
-| Python | **3.11 32 bits (x86)** — obligatoire pour le J2534 matériel |
+| Python | **3.10 32 bits (x86)** — obligatoire pour le J2534 matériel et pour l'interface |
 | Interface | Scanmatik 2 Pro (SM2 Pro) + pilotes PassThru 04.04 installés |
 | Véhicule | OBD2 (CAN 500 kbps, broches 6/14 ; VBatt broche 16) |
 
@@ -43,9 +43,9 @@ Un processus 64 bits ne peut pas charger une DLL 32 bits : `ctypes.WinDLL` lève
 `OSError: [WinError 193] %1 n'est pas une application Win32 valide`.
 Toute la chaîne (Python + PyInstaller + exe) doit donc être **x86**.
 
-## 2. Installation de Python 3.11 32 bits (OBLIGATOIRE)
+## 2. Installation de Python 3.10 32 bits (OBLIGATOIRE)
 
-1. Téléchargez **Python 3.11.x « Windows installer (32-bit) »** depuis <https://www.python.org/downloads/windows/> (fichier `python-3.11.x.exe` dont le nom contient *32-bit*).
+1. Téléchargez **Python 3.10.11 « Windows installer (32-bit) »** depuis <https://www.python.org/downloads/release/python-31011/> (fichier `python-3.10.11.exe`, lien *Windows installer (32-bit)*).
 2. Lancez l'installeur et **cochez** :
    - `Add python.exe to PATH`
    - `Install for all users`
@@ -57,7 +57,7 @@ python -c "import struct,sys; print(sys.version); print('bits =', struct.calcsiz
 ```
 
 Si vous gardez aussi un Python 64 bits, utilisez le lanceur py :
-`py -3.11-32` ou le chemin complet `C:\Users\<vous>\AppData\Local\Programs\Python\Python311-32\python.exe`.
+`py -3.10-32` ou le chemin complet `C:\Users\<vous>\AppData\Local\Programs\Python\Python310-32\python.exe`.
 
 ## 3. Installation des pilotes Scanmatik SM2 Pro
 
@@ -80,8 +80,8 @@ les entrées « SM2 » / « Scanmatik » en tête de liste.
 
 Double-cliquez sur **`INSTALLER_OPENECU.bat`** (dans le dossier `OpenECUStudio`). Il fait tout, dans l'ordre :
 
-1. détecte un Python 32 bits ; s'il n'existe pas, **télécharge et installe automatiquement Python 3.11.9 (32 bits)** depuis python.org ;
-2. crée un environnement virtuel `.venv32` et installe les dépendances (PySide6, PyInstaller) ;
+1. détecte un Python 32 bits ; s'il n'existe pas, **télécharge et installe automatiquement Python 3.10.11 (32 bits)** depuis python.org ;
+2. crée un environnement virtuel `.venv32` et installe les dépendances (PySide2, PyInstaller) ;
 3. compile `dist\OpenECU_Studio.exe` (PyInstaller) et copie `definitions/` à côté de l'exe ;
 4. lance l'application.
 
@@ -166,7 +166,7 @@ Table `Offset | D'origine | Modifié` de tous les octets changés, filtrable, av
 
 ## 6. Compilation de l'exécutable (.exe)
 
-Depuis l'environnement **Python 3.11 32 bits** :
+Depuis l'environnement **Python 3.10 32 bits** :
 
 ```bat
 build.bat
@@ -267,7 +267,7 @@ OpenECUStudio/
 
 | Symptôme | Cause / solution |
 |---|---|
-| `OSError: [WinError 193] %1 n'est pas une application Win32 valide` | Python **64 bits** : réinstallez/relancez avec Python 3.11 **32 bits** (section 2). |
+| `OSError: [WinError 193] %1 n'est pas une application Win32 valide` | Python **64 bits** : réinstallez/relancez avec Python 3.10 **32 bits** (section 2). |
 | Aucune interface dans la liste | Pilotes Scanmatik non installés, ou clé absente de `HKLM\SOFTWARE\WOW6432Node\PassThruSupport.04.04` — réinstallez les pilotes et cliquez *Rafraîchir*. |
 | `ERR_DEVICE_NOT_CONNECTED` | Boîtier USB débranché ou occupé par une autre application ; déconnectez, rebranchez, *Rafraîchir*. |
 | `UdsTimeoutError` | Contact allumé requis, mauvais IDs (essayez 0x7E4/0x7EC sur certains véhicules), ou ECU sur un autre bus. |
@@ -291,7 +291,7 @@ Les tests tournent **sans aucun matériel** (mode simulation J2534 intégré) et
 testée (rendu graphique), mais les imports d'UI sont validés à chaque build.
 
 Chaque push ou pull request modifiant `OpenECUStudio/**` déclenche le workflow
-GitHub Actions « OpenECU Studio tests » (pyflakes + pytest sur Python 3.11) : cf.
+GitHub Actions « OpenECU Studio tests » (pyflakes + pytest sur Python 3.12) : cf.
 `.github/workflows/opencu-tests.yml`.
 
 L'historique complet des versions est documenté dans `CHANGELOG.md`.

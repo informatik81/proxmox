@@ -2,6 +2,24 @@
 
 Toutes les évolutions notables du projet sont documentées ici (format « Keep a Changelog »).
 
+## [1.2.1] — Correctif installateur : bascule PySide2 (Qt5)
+
+### Corrigé
+- **Installation bloquée sans `dist/`** : Qt 6 (PySide6) n'est distribué que pour
+  Windows 64 bits — aucun wheel « win32 » n'existe, le `pip install` échouait donc
+  systématiquement dans l'environnement Python 32 bits et la compilation n'était
+  jamais lancée.
+- L'application utilise désormais **PySide2 5.15.2.1 (Qt 5)**, le seul bindings Qt
+  avec un wheel 32 bits officiel, compatible **Python 3.10 32 bits**.
+
+### Modifié
+- `INSTALLER_OPENECU.bat` réécrit : cible **Python 3.10.11 (32 bits)**, 6 étapes
+  numérotées affichées, journal `installation_opencu.log`, vérification du 32 bits
+  de l'environnement, import PySide2 contrôlé, `pause` bloquante sur chaque erreur
+  avec message explicite.
+- Haute densité d'affichage gérée (écrans Windows 125/150 %) sous Qt 5.
+- `requirements.txt`, `build.bat`, `README.md` mis à jour en conséquence.
+
 ## [1.2.0] — Interface hyper moderne, thème sombre et clair
 
 ### Ajouts

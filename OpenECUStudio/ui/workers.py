@@ -6,7 +6,7 @@ import logging
 import traceback
 from typing import Any, Callable
 
-from PySide6.QtCore import QThread, Signal
+from PySide2.QtCore import QThread, Signal
 
 logger = logging.getLogger(__name__)
 

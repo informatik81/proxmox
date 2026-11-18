@@ -34,7 +34,7 @@ def setup_logging() -> Path:
     console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(formatter)
     root.addHandler(console_handler)
-    logging.getLogger("PySide6").setLevel(logging.WARNING)
+    logging.getLogger("PySide2").setLevel(logging.WARNING)
     return log_file
 
 
@@ -45,7 +45,7 @@ def install_excepthook() -> None:
         text = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
         logging.getLogger(APP_NAME).critical("Exception non gérée :\n%s", text)
         try:
-            from PySide6.QtWidgets import QApplication, QMessageBox
+            from PySide2.QtWidgets import QApplication, QMessageBox
 
             if QApplication.instance() is not None:
                 QMessageBox.critical(
@@ -66,12 +66,15 @@ def main() -> int:
     logging.getLogger(APP_NAME).info("Démarrage — journal : %s", log_file)
     install_excepthook()
 
-    from PySide6.QtWidgets import QApplication
+    from PySide2.QtCore import QCoreApplication, Qt
+    from PySide2.QtWidgets import QApplication
 
     from core import settings as app_settings
     from ui.main_window import MainWindow
     from ui.theme import apply_theme
 
+    QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+    QCoreApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     theme_name = str(app_settings.load_settings().get("theme", "dark"))

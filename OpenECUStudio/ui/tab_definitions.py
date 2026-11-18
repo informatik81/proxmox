@@ -8,8 +8,8 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
-from PySide6.QtCore import Signal
-from PySide6.QtWidgets import (
+from PySide2.QtCore import Signal
+from PySide2.QtWidgets import (
     QFileDialog,
     QGroupBox,
     QHBoxLayout,
@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PySide6.QtCore import Qt
+from PySide2.QtCore import Qt
 
 from core.patch_engine import (
     DefinitionError,

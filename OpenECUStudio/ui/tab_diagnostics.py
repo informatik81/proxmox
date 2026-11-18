@@ -5,8 +5,8 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtWidgets import (
+from PySide2.QtCore import Qt, QTimer, Signal
+from PySide2.QtWidgets import (
     QCheckBox,
     QComboBox,
     QGridLayout,

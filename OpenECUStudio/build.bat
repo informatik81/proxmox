@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 REM ============================================================
 REM  OpenECU Studio - Compilation Windows (PyInstaller)
-REM  PREREQUIS : Python 3.11 **32 bits (x86)** obligatoire
+REM  PREREQUIS : Python 3.10 **32 bits (x86)** obligatoire
 REM  (la DLL Scanmatik smj2534.dll est 32 bits ; voir README.md)
 REM ============================================================
 
@@ -12,7 +12,7 @@ python -c "import struct,sys; sys.exit(0 if struct.calcsize('P')==4 else 1)"
 if errorlevel 1 (
     echo [ERREUR] Python 32 bits (x86) requis. Python actuel :
     python -c "import struct,sys; print('  ', sys.version); print('   pointeurs =', struct.calcsize('P')*8, 'bits')"
-    echo Installez Python 3.11 32 bits et relancez ce script depuis cet environnement.
+    echo Installez Python 3.10 32 bits et relancez ce script depuis cet environnement.
     exit /b 1
 )
 

@@ -5,8 +5,8 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from PySide6.QtGui import QCloseEvent
-from PySide6.QtWidgets import (
+from PySide2.QtGui import QCloseEvent
+from PySide2.QtWidgets import (
     QApplication,
     QLabel,
     QMainWindow,
@@ -27,7 +27,7 @@ from ui.tab_patcher import PatcherTab
 logger = logging.getLogger(__name__)
 
 APP_NAME = "OpenECU Studio"
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.2.1"
 
 THEME_LABELS = {
     "dark": "Thème sombre",

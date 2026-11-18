@@ -6,8 +6,8 @@ import logging
 from pathlib import Path
 from typing import List, Optional
 
-from PySide6.QtCore import Signal
-from PySide6.QtWidgets import (
+from PySide2.QtCore import Signal
+from PySide2.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFileDialog,
