@@ -6,8 +6,18 @@ import logging
 from typing import Optional
 
 from PySide6.QtGui import QCloseEvent
-from PySide6.QtWidgets import QLabel, QMainWindow, QMessageBox, QStatusBar, QTabWidget, QWidget
+from PySide6.QtWidgets import (
+    QApplication,
+    QLabel,
+    QMainWindow,
+    QMenuBar,
+    QMessageBox,
+    QStatusBar,
+    QTabWidget,
+    QWidget,
+)
 
+from core import settings as app_settings
 from core.patch_engine import PatchSession
 from ui.tab_definitions import DefinitionsTab
 from ui.tab_diagnostics import DiagnosticsTab
@@ -17,7 +27,12 @@ from ui.tab_patcher import PatcherTab
 logger = logging.getLogger(__name__)
 
 APP_NAME = "OpenECU Studio"
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
+
+THEME_LABELS = {
+    "dark": "Thème sombre",
+    "light": "Thème clair",
+}
 
 
 class MainWindow(QMainWindow):
@@ -44,6 +59,10 @@ class MainWindow(QMainWindow):
         self.patcher_tab.diffs_updated.connect(self.diff_tab.refresh)
         self.definitions_tab.definitions_changed.connect(self._on_definitions_changed)
 
+        self._build_themes_menu()
+
+        self._current_theme = str(app_settings.load_settings().get("theme", "dark"))
+
         status_bar = QStatusBar()
         status_bar.addWidget(
             QLabel(
@@ -53,6 +72,38 @@ class MainWindow(QMainWindow):
         )
         self.setStatusBar(status_bar)
         logger.info("Fenêtre principale initialisée.")
+
+    def _build_themes_menu(self) -> None:
+        menu_bar = QMenuBar(self)
+        self.setMenuBar(menu_bar)
+        display_menu = menu_bar.addMenu("Affichage")
+        self._theme_actions: dict = {}
+        for theme_name, label in THEME_LABELS.items():
+            action = display_menu.addAction(label)
+            action.setCheckable(True)
+            action.triggered.connect(
+                lambda checked=False, name=theme_name: self._switch_theme(name)
+            )
+            self._theme_actions[theme_name] = action
+        self._sync_theme_actions()
+
+    def _sync_theme_actions(self) -> None:
+        for theme_name, action in self._theme_actions.items():
+            action.setChecked(theme_name == self._current_theme)
+
+    def _switch_theme(self, theme_name: str) -> None:
+        app = QApplication.instance()
+        if app is None:
+            return
+        from ui.theme import apply_theme
+
+        self._current_theme = apply_theme(app, theme_name)
+        self._sync_theme_actions()
+        app_settings.save_settings({"theme": self._current_theme})
+        self.statusBar().showMessage(
+            f"{THEME_LABELS[self._current_theme]} appliqué — préférence enregistrée.", 5000
+        )
+        logger.info("Changement de thème : %s", self._current_theme)
 
     def _on_definitions_changed(self) -> None:
         self.patcher_tab._reload_definitions(auto_select=True)

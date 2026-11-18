@@ -2,6 +2,26 @@
 
 Toutes les évolutions notables du projet sont documentées ici (format « Keep a Changelog »).
 
+## [1.2.0] — Interface hyper moderne, thème sombre et clair
+
+### Ajouts
+- **Thème clair** en plus du thème sombre : palettes complètes (fond, panneaux,
+  boutons, tableaux, menus, info-bulles, barres de défilement) avec contraste
+  vérifié pour que **tous les textes restent bien lisibles** dans les deux modes.
+- **Bascule instantanée** via le menu **Affichage → Thème sombre / Thème clair**,
+  avec coche sur le thème actif et message de confirmation dans la barre d'état.
+- **Préférence mémorisée** dans `settings.json` : l'application rouvre dans le
+  dernier thème utilisé.
+- Réglages enrichis (nouvelle clé `theme`, valeur par défaut `dark`).
+
+### Améliorations
+- Feuille de style entièrement régénérée depuis la palette (`ThemeColors`) :
+  aucun codé en dur, plus de couleurs « texte vert sur fond blanc » illisibles.
+- Onglets modernisés (soulignement accentué), coins arrondis, alimentation
+  cohérente des états survol/appui/désactivé, menus et info-bulles stylés.
+- Les couleurs dynamiques (valeur VBatt, statuts, badge de compatibilité,
+  état des checksums, diff accentué) suivent automatiquement le thème actif.
+
 ## [1.1.0] — Durcissement production
 
 ### Ajouts

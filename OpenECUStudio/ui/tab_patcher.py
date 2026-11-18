@@ -36,7 +36,7 @@ from core.patch_engine import (
     list_definitions,
     load_definition,
 )
-from ui.theme import COLOR_ERROR, COLOR_OK, mono_font
+from ui.theme import current_theme, mono_font
 
 logger = logging.getLogger(__name__)
 
@@ -419,7 +419,7 @@ class PatcherTab(QWidget):
                 "✔ Compatible avec le dump chargé" if score >= 3 else "⚠ Faible compatibilité avec ce dump"
             )
             self.match_label.setStyleSheet(
-                f"color: {COLOR_OK};" if score >= 3 else f"color: {COLOR_ERROR};"
+                f"color: {current_theme().ok};" if score >= 3 else f"color: {current_theme().error};"
             )
         self.definition_changed.emit(definition)
 
@@ -555,11 +555,11 @@ class PatcherTab(QWidget):
             self.checksum_label.setText("")
             return
         if warnings:
-            self.checksum_label.setText("⚠ " + " | ".join(warnings))
-            self.checksum_label.setStyleSheet(f"color: {COLOR_ERROR};")
+            self.checksum_label.setText("⚠\u00a0 " + " | ".join(warnings))
+            self.checksum_label.setStyleSheet(f"color: {current_theme().error};")
         else:
             self.checksum_label.setText("Checksums : OK")
-            self.checksum_label.setStyleSheet(f"color: {COLOR_OK};")
+            self.checksum_label.setStyleSheet(f"color: {current_theme().ok};")
 
     def _on_export(self) -> None:
         if not self.session.is_loaded:

@@ -32,7 +32,7 @@ from core.patch_engine import (
     parse_definition,
     save_definition,
 )
-from ui.theme import COLOR_ERROR, COLOR_OK, mono_font
+from ui.theme import current_theme, mono_font
 
 logger = logging.getLogger(__name__)
 
@@ -225,4 +225,6 @@ class DefinitionsTab(QWidget):
 
     def _set_validation(self, message: str, ok: bool) -> None:
         self.validation_label.setText(message)
-        self.validation_label.setStyleSheet(f"color: {COLOR_OK};" if ok else f"color: {COLOR_ERROR};")
+        self.validation_label.setStyleSheet(
+            f"color: {current_theme().ok};" if ok else f"color: {current_theme().error};"
+        )

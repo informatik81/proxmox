@@ -26,6 +26,7 @@ DEFAULTS: Dict[str, Any] = {
     "rx_id": "7E8",
     "tester_present": False,
     "last_dir": "",
+    "theme": "dark",
 }
 
 

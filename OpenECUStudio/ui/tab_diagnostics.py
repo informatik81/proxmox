@@ -32,7 +32,7 @@ from core.j2534_driver import (
     UdsClient,
     enumerate_j2534_interfaces,
 )
-from ui.theme import mono_font
+from ui.theme import current_theme, mono_font
 from ui.workers import FunctionWorker
 
 logger = logging.getLogger(__name__)
@@ -392,7 +392,8 @@ class DiagnosticsTab(QWidget):
             self.vbatt_status.setText(f"Erreur VBatt : {exc}")
             return
         self.vbatt_label.setText(f"{volts:5.2f} V")
-        color = "#5cbf60" if volts >= 11.5 else "#e05555"
+        colors = current_theme()
+        color = colors.ok if volts >= 11.5 else colors.error
         self.vbatt_label.setStyleSheet(f"color: {color};")
         self.vbatt_status.setText("Lecture temps réel (1 Hz)")
 

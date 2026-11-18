@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.patch_engine import DiffEntry, PatchError, PatchSession
-from ui.theme import COLOR_ACCENT, COLOR_ERROR, COLOR_OK, mono_font
+from ui.theme import current_theme, mono_font
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +89,7 @@ class DiffViewerTab(QWidget):
             offset_item = QTableWidgetItem(f"0x{diff.offset:06X}")
             original_item = QTableWidgetItem(f"0x{diff.original:02X}")
             patched_item = QTableWidgetItem(f"0x{diff.patched:02X}")
-            patched_item.setForeground(QColor(COLOR_ACCENT))
+            patched_item.setForeground(QColor(current_theme().accent))
             self.table.setItem(row, 0, offset_item)
             self.table.setItem(row, 1, original_item)
             self.table.setItem(row, 2, patched_item)
@@ -98,7 +98,7 @@ class DiffViewerTab(QWidget):
             "Aucune modification en attente." if not self._diffs else "Vérifiez le checksum avant export."
         )
         self.status_label.setStyleSheet(
-            f"color: {COLOR_OK};" if not self._diffs else f"color: {COLOR_ERROR};"
+            f"color: {current_theme().ok};" if not self._diffs else f"color: {current_theme().error};"
         )
 
     def _on_export(self) -> None:

@@ -68,12 +68,15 @@ def main() -> int:
 
     from PySide6.QtWidgets import QApplication
 
+    from core import settings as app_settings
     from ui.main_window import MainWindow
-    from ui.theme import apply_dark_theme
+    from ui.theme import apply_theme
 
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
-    apply_dark_theme(app)
+    theme_name = str(app_settings.load_settings().get("theme", "dark"))
+    applied = apply_theme(app, theme_name)
+    logging.getLogger(APP_NAME).info("Thème appliqué : %s", applied)
     window = MainWindow()
     window.show()
     logging.getLogger(APP_NAME).info("Interface affichée. Boucle d'événements Qt démarrée.")

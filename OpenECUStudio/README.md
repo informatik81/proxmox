@@ -102,6 +102,16 @@ toute la chaîne sans véhicule.
 
 ## 5. Utilisation
 
+### Thèmes sombre et clair (v1.2.0)
+
+L'interface propose **deux thèmes complets** : **sombre** (par défaut, style industriel)
+et **clair**. Le changement se fait depuis le menu **Affichage → Thème sombre / Thème clair**
+au sommet de la fenêtre : il est **immédiat**, mémorisé dans `settings.json`
+(l'app rouvre dans le dernier thème utilisé) et **tous les libellés restent lisibles**
+dans les deux modes — les couleurs dynamiques (VBatt, statuts, checksums, diff) suivent
+automatiquement le thème actif.
+
+
 ### Onglet 1 — Diagnostic & SM2 Pro (J2534)
 - **Interface** : sélection + connexion (ISO 15765, 500 kbps, 0x7E0/0x7E8).
 - **Configuration CAN** : vitesse (125 k / 250 k / 500 k / 1 M bauds), **ID requête (TX)** et **ID réponse (RX)** configurables (ex. 0x7E4/0x7EC sur certains véhicules) ; les réglages sont **mémorisés** dans `settings.json` (interface, vitesse, IDs, dernier dossier).
