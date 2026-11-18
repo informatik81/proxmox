@@ -7,7 +7,7 @@ from typing import Optional
 
 from PySide6.QtWidgets import QLabel, QMainWindow, QStatusBar, QTabWidget, QWidget
 
-from core.patch_engine import DiffEntry, PatchSession
+from core.patch_engine import PatchSession
 from ui.tab_definitions import DefinitionsTab
 from ui.tab_diagnostics import DiagnosticsTab
 from ui.tab_diff import DiffViewerTab

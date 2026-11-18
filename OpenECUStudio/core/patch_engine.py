@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import shutil
 import sys
 import time
@@ -23,7 +24,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from core.checksum import ChecksumReport, evaluate_region, full_file_report
-from core.ecu_analyzer import EcuAnalyzer, EcuIdentity, find_pattern
+from core.ecu_analyzer import EcuAnalyzer, EcuIdentity, find_pattern, vin_check_digit_valid
 
 logger = logging.getLogger(__name__)
 
@@ -410,6 +411,50 @@ class PatchSession:
         rend l'opération réversible à tout moment.
         """
         return self.load(Path(path))
+
+    # -- réemploi d'ECU (VIN) -------------------------------------------------
+    def find_vins(self) -> List[Tuple[int, str]]:
+        """Détecte tous les VIN potentiels du dump (offset, VIN)."""
+        if not self.is_loaded:
+            raise PatchError("Aucun fichier chargé.")
+        return self._analyzer.find_vins(bytes(self.data))
+
+    def replace_vin(self, new_vin: str, occurrences: Optional[List[int]] = None) -> List[DiffEntry]:
+        """Remplace le VIN du dump (réemploi d'un calculateur d'occasion).
+
+        Par défaut, **toutes** les occurrences détectées sont remplacées de
+        façon synchronisée (flash + zones d'appairage) afin de conserver la
+        cohérence interne du fichier.
+        """
+        if not self.is_loaded:
+            raise PatchError("Aucun fichier chargé.")
+        new_vin = new_vin.strip().upper()
+        if len(new_vin) != 17:
+            raise PatchError(f"Le VIN doit contenir exactement 17 caractères (reçu : {len(new_vin)}).")
+        if not re.fullmatch(r"[A-HJ-NPR-Z0-9]{17}", new_vin):
+            raise PatchError("VIN invalide : caractères autorisés = chiffres et lettres sauf I, O, Q.")
+        check = vin_check_digit_valid(new_vin)
+        if check is False:
+            logger.warning("VIN saisi : caractère de contrôle ISO 3779 (position 9) invalide — vérifiez la saisie.")
+        vins = self.find_vins()
+        if not vins:
+            raise PatchError("Aucun VIN détecté dans le dump : remplacement impossible.")
+        targets = vins if occurrences is None else [v for v in vins if v[0] in occurrences]
+        if not targets:
+            raise PatchError("Aucune des occurrences sélectionnées n'existe dans le dump.")
+        diffs: List[DiffEntry] = []
+        for offset, old_vin in targets:
+            new_bytes = new_vin.encode("ascii")
+            for index in range(17):
+                position = offset + index
+                if self.data[position] != new_bytes[index]:
+                    entry = DiffEntry(offset=position, original=self.data[position], patched=new_bytes[index])
+                    self.data[position] = new_bytes[index]
+                    diffs.append(entry)
+                    self.diffs.append(entry)
+            logger.info("VIN @ 0x%06X : %s -> %s", offset, old_vin, new_vin)
+        logger.info("VIN remplacé sur %d occurrence(s), %d octet(s) modifié(s).", len(targets), len(diffs))
+        return diffs
 
     def match_score(self, definition: EcuDefinition) -> int:
         """Score de compatibilité entre le dump chargé et une définition."""

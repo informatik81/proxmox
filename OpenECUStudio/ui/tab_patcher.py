@@ -9,6 +9,7 @@ from typing import List, Optional
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QFileDialog,
     QFormLayout,
     QGroupBox,
@@ -86,6 +87,23 @@ class PatcherTab(QWidget):
             self.identity_form.addRow(key + " :", field)
         file_layout.addLayout(self.identity_form)
         layout.addWidget(file_group)
+
+        vin_group = QGroupBox("Réemploi d'un calculateur d'occasion — VIN")
+        vin_layout = QHBoxLayout(vin_group)
+        self.vin_found_label = QLabel("Aucun VIN détecté.")
+        self.vin_found_label.setObjectName("statusLabel")
+        self.vin_input = QLineEdit()
+        self.vin_input.setPlaceholderText("Nouveau VIN (17 caractères, sans I/O/Q)")
+        self.vin_input.setMaxLength(17)
+        self.vin_input.setFont(mono_font())
+        self.vin_input.setInputMask("AAAAAAAAAAAAAAAAA;_")
+        replace_vin_button = QPushButton("Remplacer le VIN dans le dump")
+        replace_vin_button.setObjectName("primary")
+        replace_vin_button.clicked.connect(self._on_replace_vin)
+        vin_layout.addWidget(self.vin_found_label, 1)
+        vin_layout.addWidget(self.vin_input)
+        vin_layout.addWidget(replace_vin_button)
+        layout.addWidget(vin_group)
 
         definition_group = QGroupBox("Définition de calculateur (JSON)")
         definition_layout = QHBoxLayout(definition_group)
@@ -202,9 +220,52 @@ class PatcherTab(QWidget):
         fields["Entropie"].setText(f"{identity.entropy:.3f} bits/octet")
         fields["N° de pièce"].setText(", ".join(identity.part_numbers) if identity.part_numbers else "-")
         fields["SAUVEGARDE"].setText(str(self.session.backup_path))
+        self._refresh_vin_label()
         self._reload_definitions(auto_select=True)
         self._on_scan_dtcs()
         self._update_checksum_label()
+
+    # ------------------------------------------------------------------ VIN
+    def _refresh_vin_label(self) -> None:
+        if not self.session.is_loaded:
+            self.vin_found_label.setText("Aucun VIN détecté.")
+            return
+        try:
+            vins = self.session.find_vins()
+        except PatchError:
+            self.vin_found_label.setText("Aucun VIN détecté.")
+            return
+        if not vins:
+            self.vin_found_label.setText("Aucun VIN détecté dans ce dump.")
+            return
+        unique = sorted({vin for _, vin in vins})
+        positions = ", ".join(f"0x{offset:06X}" for offset, _ in vins)
+        self.vin_found_label.setText(
+            f"{len(vins)} occurrence(s) : {' / '.join(unique)}   @ {positions}"
+        )
+
+    def _on_replace_vin(self) -> None:
+        if not self.session.is_loaded:
+            QMessageBox.information(self, "OpenECU Studio", "Chargez d'abord un fichier ECU.")
+            return
+        new_vin = self.vin_input.text().strip().upper()
+        if len(new_vin) != 17:
+            QMessageBox.warning(self, "VIN", "Saisissez un VIN complet de 17 caractères.")
+            return
+        try:
+            diffs = self.session.replace_vin(new_vin)
+        except PatchError as exc:
+            QMessageBox.critical(self, "Erreur VIN", str(exc))
+            return
+        self._refresh_vin_label()
+        self._update_checksum_label()
+        self.diffs_updated.emit(list(self.session.diffs))
+        QMessageBox.information(
+            self,
+            "VIN remplacé",
+            f"{len(diffs)} octet(s) modifié(s) — toutes les occurrences du dump sont synchronisées.\n"
+            "Rappel : le VIN est aussi stocké dans les autres calculateurs (immo/BSI).",
+        )
 
     # -------------------------------------------------------------- définition
     def _reload_definitions(self, auto_select: bool = False) -> None:

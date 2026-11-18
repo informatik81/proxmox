@@ -25,8 +25,6 @@ from core.j2534_driver import (
     J2534Device,
     MockJ2534Device,
     UdsClient,
-    UdsNegativeResponseError,
-    UdsTimeoutError,
     enumerate_j2534_interfaces,
 )
 from ui.workers import FunctionWorker
