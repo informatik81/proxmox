@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "definition_id": "bosch_edc17_generic_dtc",
+  "name": "Bosch EDC17 — DTC Remover générique (modèle)",
+  "manufacturer": "Bosch",
+  "ecu_families": ["EDC17C10", "EDC17C60", "EDC17CP44"],
+  "match": {
+    "id_patterns": ["EDC17"],
+    "min_size": 1048576,
+    "max_size": 8388608
+  },
+  "checksum": {
+    "notes": "Le checksum EDC17 réel (CRC32 réparti sur plusieurs blocs, zones protégées) n'est pas recalculé automatiquement par OpenECU Studio. Utilisez un outil de checksum dédié (ex. WinOLS avec checksum EDC17) avant tout flash. Les valeurs ci-dessous sont indicatives.",
+    "regions": [
+      {
+        "algorithm": "crc32",
+        "start": 0,
+        "length": 2097152,
+        "storage_offset": null,
+        "endianness": "little"
+      },
+      {
+        "algorithm": "sum32",
+        "start": 0,
+        "length": 2097152,
+        "storage_offset": null,
+        "endianness": "little"
+      }
+    ]
+  },
+  "solutions": [
+    {
+      "id": "egr_off",
+      "label": "EGR Off",
+      "category": "antipollution",
+      "description": "Neutralise la recirculation des gaz d'échappement : le saut conditionnel de contrôle de la vanne EGR est remplacé par un saut inconditionnel, et la table de consigne EGR est vidée. Les motifs ci-dessous sont un MODÈLE à adapter à votre version logicielle.",
+      "patches": [
+        {
+          "name": "EGR — contrôle d'activation (saut conditionnel)",
+          "find": "48 8B ?? ?? 00 00 66 85 ?? 74 ??",
+          "replace": "48 8B ?? ?? 00 00 66 85 ?? EB ??",
+          "description": "JZ (74) remplacé par JMP (EB) : le test de présence/état EGR court-circuite toujours vers la branche 'vanne neutralisée'."
+        },
+        {
+          "name": "EGR — table de consigne (remise à zéro)",
+          "find": "?? ?? ?? ?? 00 00 00 00 00 00 00 00 00 00 00 00",
+          "replace": "?? ?? ?? ?? 00 00 00 00 00 00 00 00 00 00 00 00",
+          "description": "MODÈLE : localiser la table de consigne EGR (axe régime/charge) et forcer les valeurs à 0. Adaptez find/replace à votre dump."
+        }
+      ]
+    },
+    {
+      "id": "dpf_off",
+      "label": "DPF / FAP Off",
+      "category": "antipollution",
+      "description": "Désactive la régénération et la surveillance du filtre à particules (modèle à adapter).",
+      "patches": [
+        {
+          "name": "DPF — routine de régénération",
+          "find": "0F 85 ?? ?? 00 00 48 8D ?? ?? ?? ?? 00 00",
+          "replace": "0F 85 ?? ?? 00 00 48 8D ?? ?? ?? ?? 00 00",
+          "description": "MODÈLE : neutraliser l'appel de la routine de régénération forcée. Adaptez les octets concrets à votre dump."
+        },
+        {
+          "name": "DPF — seuil de saturation (suie)",
+          "find": "?? ?? ?? ?? 00 00 00 00 00 00 00 00",
+          "replace": "?? ?? ?? ?? 00 00 00 00 00 00 00 00",
+          "description": "MODÈLE : forcer le modèle de charge en suie à zéro. Adaptez à votre dump."
+        }
+      ]
+    },
+    {
+      "id": "adblue_off",
+      "label": "AdBlue / SCR Off",
+      "category": "antipollution",
+      "description": "Désactive la surveillance SCR (réducteur catalytique, injection d'urée) — modèle à adapter.",
+      "patches": [
+        {
+          "name": "SCR — surveillance NOx/urée",
+          "find": "3B ?? ?? 00 00 0F 87 ?? ?? 00 00",
+          "replace": "3B ?? ?? 00 00 0F 87 ?? ?? 00 00",
+          "description": "MODÈLE : court-circuiter la comparaison de consommation d'AdBlue. Adaptez les octets à votre dump."
+        }
+      ]
+    },
+    {
+      "id": "swirl_off",
+      "label": "Swirl Flaps Off",
+      "category": "admission",
+      "description": "Neutralise les volets de tourbillonnement (swirl flaps) — modèle à adapter.",
+      "patches": [
+        {
+          "name": "Swirl — test d'actionneur",
+          "find": "48 8B ?? ?? 00 00 E8 ?? ?? ?? ?? 84 C0 74 ??",
+          "replace": "48 8B ?? ?? 00 00 E8 ?? ?? ?? ?? 84 C0 EB ??",
+          "description": "MODÈLE : le résultat du test d'actionneur n'est plus pris en compte (JZ -> JMP). Adaptez à votre dump."
+        }
+      ]
+    }
+  ],
+  "dtc_tables": [
+    {
+      "name": "Table DTC principale (P-codes + switch)",
+      "entry_size": 4,
+      "code_offset": 0,
+      "switch_offset": 3,
+      "byte_order": "big",
+      "locator": null,
+      "min_entries": 8
+    },
+    {
+      "name": "Table DTC secondaire (switch en position 2)",
+      "entry_size": 4,
+      "code_offset": 0,
+      "switch_offset": 2,
+      "byte_order": "big",
+      "locator": null,
+      "min_entries": 8
+    }
+  ],
+  "notes": "MODÈLE GÉNÉRIQUE : les motifs hexadécimaux sont illustratifs. Identifiez vos propres signatures sur un dump d'origine avant toute application réelle."
+}

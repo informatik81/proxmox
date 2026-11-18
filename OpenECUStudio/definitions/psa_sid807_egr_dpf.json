@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "definition_id": "psa_sid807_egr_dpf",
+  "name": "PSA SID807 — EGR / DPF par signatures (modèle)",
+  "manufacturer": "Siemens/Continental",
+  "ecu_families": ["SID807", "PCR2.1"],
+  "match": {
+    "id_patterns": ["SID807", "PCR2.1"],
+    "min_size": 1048576,
+    "max_size": 4194304
+  },
+  "checksum": {
+    "notes": "Le checksum SID807/PCR2.1 (sommes 16 bits réparties + zones signées) n'est pas recalculé automatiquement. Corrigez le checksum avec un outil dédié avant tout flash.",
+    "regions": [
+      {
+        "algorithm": "sum16",
+        "start": 0,
+        "length": 2097152,
+        "storage_offset": null,
+        "endianness": "big"
+      },
+      {
+        "algorithm": "crc32",
+        "start": 0,
+        "length": 2097152,
+        "storage_offset": null,
+        "endianness": "little"
+      }
+    ]
+  },
+  "solutions": [
+    {
+      "id": "egr_off",
+      "label": "EGR Off",
+      "category": "antipollution",
+      "description": "Désactivation EGR par signature avant/après sur la cartographie de recirculation et le test de débit (motifs MODÈLE à adapter à votre version logicielle).",
+      "patches": [
+        {
+          "name": "EGR — cartographie de recirculation",
+          "find": "B4 04 B4 04 B4 04 B4 04 B4 04 B4 04 B4 04 B4 04",
+          "replace": "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+          "description": "MODÈLE : ligne caractéristique de la carto EGR (valeurs de recirculation) remise à zéro. Adaptez au dump d'origine."
+        },
+        {
+          "name": "EGR — test de débit (saut conditionnel)",
+          "find": "1E ?? ?? 00 00 00 00 00 00 00 00 00 00 00 00 00",
+          "replace": "1E ?? ?? 00 00 00 00 00 00 00 00 00 00 00 00 00",
+          "description": "MODÈLE : neutraliser l'évaluation du débit EGR attendu. Adaptez les octets concrets à votre dump."
+        }
+      ]
+    },
+    {
+      "id": "dpf_off",
+      "label": "DPF / FAP Off",
+      "category": "antipollution",
+      "description": "Désactivation de la surveillance FAP : modèle de masse, compteur de cendres et régénérations (motifs MODÈLE).",
+      "patches": [
+        {
+          "name": "FAP — modèle de masse (suie)",
+          "find": "?? ?? ?? ?? 00 00 00 00 00 00 00 00 00 00 00 00",
+          "replace": "?? ?? ?? ?? 00 00 00 00 00 00 00 00 00 00 00 00",
+          "description": "MODÈLE : forcer le modèle de masse de suie à zéro. Adaptez find/replace à votre dump."
+        },
+        {
+          "name": "FAP — compteur de cendres",
+          "find": "?? ?? ?? ?? ?? ?? ?? ?? 00 00 00 00 00 00 00 00",
+          "replace": "?? ?? ?? ?? ?? ?? ?? ?? 00 00 00 00 00 00 00 00",
+          "description": "MODÈLE : remise à zéro du compteur de cendres. Adaptez à votre dump."
+        }
+      ]
+    }
+  ],
+  "dtc_tables": [
+    {
+      "name": "Table DTC principale SID807 (P-codes + switch)",
+      "entry_size": 4,
+      "code_offset": 0,
+      "switch_offset": 3,
+      "byte_order": "big",
+      "locator": null,
+      "min_entries": 8
+    }
+  ],
+  "notes": "MODÈLE PSA SID807 : les signatures hexadécimales sont illustratives. Extrayez vos propres signatures avant/après depuis un dump d'origine corrigé (comparaison avec un fichier de référence)."
+}

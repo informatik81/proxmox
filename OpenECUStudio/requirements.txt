@@ -1,0 +1,10 @@
+# OpenECU Studio — dépendances
+# IMPORTANT : installer sous Python 3.10 **32 bits (x86)** sous Windows 10/11
+# (la DLL J2534 Scanmatik smj2534.dll est 32 bits — voir README.md).
+#
+# Pourquoi PySide2 (Qt5) et pas PySide6 (Qt6) ?
+# Qt 6 n'est distribué que pour Windows 64 bits : aucun wheel PySide6 "win32"
+# n'existe sur PyPI, l'installation échoue donc sous Python 32 bits.
+# PySide2 5.15.2.1 fournit officiellement un wheel win32 pour Python 3.5 à 3.10.
+PySide2==5.15.2.1
+pyinstaller>=6.3.0,<7.0.0
