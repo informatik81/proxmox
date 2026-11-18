@@ -5,7 +5,8 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from PySide6.QtWidgets import QLabel, QMainWindow, QStatusBar, QTabWidget, QWidget
+from PySide6.QtGui import QCloseEvent
+from PySide6.QtWidgets import QLabel, QMainWindow, QMessageBox, QStatusBar, QTabWidget, QWidget
 
 from core.patch_engine import PatchSession
 from ui.tab_definitions import DefinitionsTab
@@ -16,7 +17,7 @@ from ui.tab_patcher import PatcherTab
 logger = logging.getLogger(__name__)
 
 APP_NAME = "OpenECU Studio"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
 
 
 class MainWindow(QMainWindow):
@@ -56,3 +57,21 @@ class MainWindow(QMainWindow):
     def _on_definitions_changed(self) -> None:
         self.patcher_tab._reload_definitions(auto_select=True)
         logger.info("Définitions rechargées depuis le Gestionnaire de Définitions.")
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        if self.session.is_loaded and self.session.diffs:
+            answer = QMessageBox.question(
+                self,
+                "Modifications non exportées",
+                f"{len(self.session.diffs)} modification(s) en mémoire ne sont pas exportées.\n\n"
+                "Elles seront perdues à la fermeture (la sauvegarde .bak du fichier "
+                "d'origine est conservée).\n\nConfirmez-vous la fermeture ?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No,
+            )
+            if answer != QMessageBox.Yes:
+                event.ignore()
+                return
+        self.diagnostics_tab.shutdown()
+        event.accept()
+        logger.info("Application fermée proprement.")

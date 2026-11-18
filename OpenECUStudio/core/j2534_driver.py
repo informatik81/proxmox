@@ -778,6 +778,9 @@ class UdsClient:
         self._isotp = IsoTpLayer(device, tx_id=tx_id, rx_id=rx_id, extended=extended)
         self._timeout = timeout
         self._filter_started = False
+        # Sérialise les requêtes : un Tester Present périodique et les requêtes
+        # de l'interface ne peuvent pas entremêler leurs échanges ISO-TP.
+        self._request_lock = threading.RLock()
 
     def _ensure_filter(self) -> None:
         if not self._filter_started:
@@ -793,24 +796,25 @@ class UdsClient:
         « responsePending », qui prolonge l'attente) et ``UdsTimeoutError``
         si aucune réponse n'arrive.
         """
-        self._ensure_filter()
-        effective_timeout = timeout if timeout is not None else self._timeout
-        sid = data[0] if data else 0x00
-        logger.debug("UDS TX : %s", " ".join(f"{b:02X}" for b in data))
-        self._isotp.send(data)
-        deadline = time.monotonic() + effective_timeout
-        while time.monotonic() < deadline:
-            response = self._isotp.receive(0.25)
-            if response is None:
-                continue
-            logger.debug("UDS RX : %s", " ".join(f"{b:02X}" for b in response))
-            if response and response[0] == 0x7F and len(response) >= 3:
-                nrc = response[2]
-                if nrc == 0x78:  # responsePending : on prolonge l'attente
-                    deadline = time.monotonic() + effective_timeout
+        with self._request_lock:
+            self._ensure_filter()
+            effective_timeout = timeout if timeout is not None else self._timeout
+            sid = data[0] if data else 0x00
+            logger.debug("UDS TX : %s", " ".join(f"{b:02X}" for b in data))
+            self._isotp.send(data)
+            deadline = time.monotonic() + effective_timeout
+            while time.monotonic() < deadline:
+                response = self._isotp.receive(0.25)
+                if response is None:
                     continue
-                raise UdsNegativeResponseError(sid, nrc)
-            return response
+                logger.debug("UDS RX : %s", " ".join(f"{b:02X}" for b in response))
+                if response and response[0] == 0x7F and len(response) >= 3:
+                    nrc = response[2]
+                    if nrc == 0x78:  # responsePending : on prolonge l'attente
+                        deadline = time.monotonic() + effective_timeout
+                        continue
+                    raise UdsNegativeResponseError(sid, nrc)
+                return response
         raise UdsTimeoutError(f"Aucune réponse UDS pour SID 0x{sid:02X} (délai {effective_timeout:.1f}s).")
 
     # -- services --------------------------------------------------------------
@@ -984,7 +988,7 @@ class MockJ2534Device(BaseJ2534Device):
                 return bytes([0x62, request[1], request[2]]) + self.MOCK_HW
             if did == DID_SOFTWARE_NUMBER:
                 return bytes([0x62, request[1], request[2]]) + self.MOCK_SW
-            return bytes([0x62, request[1], request[2]]) + b"UNKNOWN-DID"
+            return bytes([0x7F, sid, 0x31])  # requestOutOfRange
         if sid == SID_READ_DTC_INFORMATION and len(request) >= 2 and request[1] == 0x02:
             payload = bytearray([0x59, 0x02, 0xFF])
             for code, status in self._dtcs:

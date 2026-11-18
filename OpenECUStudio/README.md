@@ -104,19 +104,52 @@ toute la chaîne sans véhicule.
 
 ### Onglet 1 — Diagnostic & SM2 Pro (J2534)
 - **Interface** : sélection + connexion (ISO 15765, 500 kbps, 0x7E0/0x7E8).
+- **Configuration CAN** : vitesse (125 k / 250 k / 500 k / 1 M bauds), **ID requête (TX)** et **ID réponse (RX)** configurables (ex. 0x7E4/0x7EC sur certains véhicules) ; les réglages sont **mémorisés** dans `settings.json` (interface, vitesse, IDs, dernier dossier).
+- **Tester Present automatique (2 s)** : case à cocher qui maintient la session de diagnostic active en envoyant `3E 00` toutes les 2 secondes (les échanges UDS sont sérialisés, aucun entrelacement possible).
 - **VBatt** : tension batterie lue en temps réel (1 Hz) via `PassThruIoctl(READ_VBATT)`.
 - **Identifier ECU (UDS)** : session étendue `10 03` puis `22 F190` (VIN), `22 F191` (N° HW), `22 F195` (N° SW).
-- **Lire/Effacer les DTC** : `19 02 FF` (reportDTCByStatusMask) et `14 FF FF FF` (ClearDiagnosticInformation).
+- **Lire les DTC** : `19 02 FF` (reportDTCByStatusMask).
+- **Effacer les DTC** (`14 FF FF FF`) : ⚠️ opération irréversible sur la mémoire de l'ECU — une **confirmation explicite** est demandée avant exécution.
 - **Console** : toutes les trames CAN/UDS brutes (TX/RX) horodatées.
+- **Fermeture propre** : à la sortie de l'application, matériel déconnecté, timers arrêtés, réglages sauvegardés.
 
 ### Onglet 2 — Éditeur ECU & Patcher (Offline)
 1. **Charger un fichier ECU** : une sauvegarde horodatée `.bak` est créée **immédiatement** (ex. `dump_20250101_120000.bak`) avant toute modification.
 2. La **fiche d'identité** (famille détectée, entropie, n° de pièce, SHA-256) s'affiche ; la définition la plus compatible est sélectionnée automatiquement.
-3. Cochez les **solutions** (EGR Off, DPF Off, AdBlue Off, Swirl Flaps Off) définies dans le JSON puis **Appliquer**.
-4. **DTC Remover** : cliquez *Scanner* — chaque code (ex. `P0401`, `P2002`, `P2463`) est listé avec son **offset hexadécimal** ; utilisez la barre de recherche, sélectionnez les lignes puis **Désactiver les DTC sélectionnés** (octet switch mis à `0x00`).
+3. Cochez les **solutions** (EGR Off, DPF Off, AdBlue Off, Swirl Flaps Off) définies dans le JSON puis **Appliquer** — une **fenêtre de mise en garde** (cadre légal + risque checksum) s'affiche avant toute écriture.
+4. **DTC Remover** : cliquez *Scanner* — chaque code (ex. `P0401`, `P2002`, `P2463`) est listé avec son **offset hexadécimal** ; utilisez la barre de recherche, sélectionnez les lignes puis **Désactiver les DTC sélectionnés** (octet switch mis à `0x00`, également précédé d'une confirmation).
+5. **Sauvegarder le calculateur (copie)** : enregistre une copie du fichier **tel que chargé** (non modifié) à l'emplacement de votre choix, en plus de la sauvegarde `.bak` horodatée automatique.
+6. La **fermeture de l'application** vous avertit si des modifications n'ont pas été exportées.
+
+### Sécurité des opérations (récapitulatif)
+
+| Action | Protection intégrée |
+|---|---|
+| Chargement d'un dump | Sauvegarde `.bak` horodatée automatique, avant toute modification |
+| Solutions EGR/DPF/AdBlue/Papilles | Confirmation avec rappel légal (UE 2018/858, art. R318-4) |
+| Désactivation de DTC | Confirmation avec rappel des risques (panne masquée, contrôle technique) |
+| Remplacement du VIN | Confirmation avec cadre légal (art. 441-1 du code pénal) et rappel d'appairage immo/BSI |
+| Effacement des DTC dans l'ECU (UDS) | Confirmation — action irréversible sur la mémoire ECU |
+| Export du `.bin` patché | Confirmation si checksums en écart + avertissement « risque de calculateur inutilisable » |
+| Annulation de session | Confirmation, sauvegardes `.bak` conservées |
+| Fermeture de l'application | Avertissement si modifications non exportées |
+
+### Réemploi d'un calculateur d'occasion (au lieu de le jeter)
+
+L'application couvre la partie **fichier** du réemploi d'un ECU de récupération :
+
+1. **Identifier le donneur** : onglet 1, lecture UDS du VIN et des n° HW/SW — à comparer avec les besoins du véhicule cible (compatibilité référence + version logicielle).
+2. **Dumper le calculateur donneur** (outil de lecture dédié) et le charger dans l'onglet 2 — une sauvegarde `.bak` est créée à l'instant.
+3. **Préparer le fichier** :
+   - **VIN** : le groupe « Réemploi — VIN » détecte automatiquement **toutes** les occurrences du VIN dans le dump (flash + zones d'appairage), valide le caractère de contrôle ISO 3779 (informationnel — les VIN européens ne l'utilisent pas tous) et le remplace de façon synchronisée dans tout le dump ;
+   - **DTC / solutions** : via les définitions JSON (onglet 4) selon la famille.
+4. **Écrire le fichier préparé** dans le calculateur avec un outil de flash (SM2 Pro mode flash, MPPS, KESS...).
+5. **Appairer au véhicule** : le VIN est aussi stocké dans les autres calculateurs (immo/BSI/UCH) et le codage d'appairage se fait avec un outil de diagnostic compatible constructeur — sans cette étape, le moteur ne démarrera pas.
+
+⚠️ Usage légitime = **réparation / réutilisation** (remplacer un ECU défectueux par un équivalent d'occasion). La modification du VIN dans un but de dissimulation d'identité de véhicule est un délit (faux et usage de faux).
 
 ### Onglet 3 — Comparateur Hexadécimal
-Table `Offset | Original | Modifié` de tous les octets changés, filtrable, avec export final du `.bin` patché (l'export sauvegarde aussi un fichier existant en `.bak` et affiche l'**état des checksums**).
+Table `Offset | D'origine | Modifié` de tous les octets changés, filtrable, avec export final du `.bin` patché (l'export sauvegarde aussi un fichier existant en `.bak` et affiche l'**état des checksums**).
 
 ### Onglet 4 — Gestionnaire de Définitions
 Éditeur JSON intégré avec validation : créez/importez de nouvelles définitions pour d'autres calculateurs **sans recompiler** (les fichiers vivent dans `definitions/` à côté de l'exe).
@@ -231,3 +264,24 @@ OpenECUStudio/
 | DTC introuvable dans le dump | Le scan brut exige ≥ 8 entrées consécutives valides ; ajoutez un `locator` et les offsets réels dans la définition JSON. |
 | ECU refuse le fichier après flash | **Checksum non corrigé** : utilisez un outil de checksum dédié pour la famille (cf. avertissement dans les définitions). |
 | L'exe ne démarre pas | Lancez-le depuis un terminal pour lire l'erreur ; vérifiez que `definitions/` est présent à côté de l'exe et consultez `logs/`. |
+
+---
+
+## 10. Tests et intégration continue (v1.1.0)
+
+La logique métier (checksums, analyseur, moteur de patch, couche J2534/UDS, réglages) est couverte par une suite de tests automatisée :
+
+```
+python -m pip install pytest
+python -m pytest tests -q
+```
+
+Les tests tournent **sans aucun matériel** (mode simulation J2534 intégré) et sans Windows
+(les structures ABI Win32 ne sont vérifiées que sous Windows). L'interface Qt n'est pas
+testée (rendu graphique), mais les imports d'UI sont validés à chaque build.
+
+Chaque push ou pull request modifiant `OpenECUStudio/**` déclenche le workflow
+GitHub Actions « OpenECU Studio tests » (pyflakes + pytest sur Python 3.11) : cf.
+`.github/workflows/opencu-tests.yml`.
+
+L'historique complet des versions est documenté dans `CHANGELOG.md`.

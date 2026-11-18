@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core import settings as app_settings
 from core.patch_engine import (
     DtcEntry,
     DefinitionError,
@@ -38,6 +39,46 @@ from core.patch_engine import (
 from ui.theme import COLOR_ERROR, COLOR_OK, mono_font
 
 logger = logging.getLogger(__name__)
+
+ECU_FILTER = "Fichiers ECU (*.bin *.ori *.mpc);;Tous les fichiers (*)"
+
+
+LEGAL_ANTIPOLLUTION = (
+    "\u26a0 MISE EN GARDE AVANT MODIFICATION\n\n"
+    "Les solutions cochées vont modifier définitivement le fichier binaire "
+    "(désactivation de fonctions antipollution : EGR, FAP/DPF, SCR/AdBlue, papilles…).\n\n"
+    "• Circuler avec ces fonctions désactivées est INTERDIT sur voie publique "
+    "(Règlement UE 2018/858 ; Code de la route, art. R318-4 en France) : amendes, "
+    "refus au contrôle technique, immobilisation possible.\n"
+    "• Usage légitime : circuit fermé, banc d'essai, R&D, export hors UE.\n"
+    "• Ne flashez JAMAIS un fichier dont le checksum n'est pas validé : risque "
+    "de calculateur inutilisable.\n\n"
+    "Une sauvegarde .bak horodatée a déjà été créée à côté du fichier chargé.\n\n"
+    "Confirmez-vous l'application sur le fichier chargé ?"
+)
+
+LEGAL_DTC_DISABLE = (
+    "\u26a0 MISE EN GARDE — DÉSACTIVATION DE CODES DÉFAUTS\n\n"
+    "Un code défaut désactivé n'est plus signalé au diagnostic : la panne "
+    "correspondante sera masquée.\n\n"
+    "• Si le défaut concerne l'antipollution : infraction sur voie publique "
+    "(art. R318-4) et refus au contrôle technique.\n"
+    "• Un défaut moteur réel reste dangereux même s'il est masqué.\n"
+    "• Les modifications restent annulables avant export (sauvegarde .bak créée).\n\n"
+    "Confirmez-vous la désactivation des DTC sélectionnés ?"
+)
+
+LEGAL_VIN = (
+    "\u26a0 CADRE LÉGAL STRICT — MODIFICATION DU VIN\n\n"
+    "Modifier le numéro VIN d'un véhicule est un délit (art. 441-1 du Code pénal : "
+    "faux en écriture), hors remplacement justifié du calculateur.\n\n"
+    "• Usage légitime : réimplanter un calculateur d'occasion sur le véhicule "
+    "d'origine en inscrivant SON VIN.\n"
+    "• Cette opération ne modifie NI l'immobilisateur, NI le BSI : l'appairage "
+    "doit être refait avec l'outil constructeur.\n"
+    "• Les modifications restent annulables avant export.\n\n"
+    "Confirmez-vous le remplacement du VIN dans le dump ?"
+)
 
 
 class PatcherTab(QWidget):
@@ -60,9 +101,16 @@ class PatcherTab(QWidget):
         file_group = QGroupBox("Fichier ECU (.bin / .ori)")
         file_layout = QVBoxLayout(file_group)
         file_buttons = QHBoxLayout()
-        load_button = QPushButton("Charger un fichier ECU")
+        load_button = QPushButton("Charger un fichier ECU (.bin / .ori)")
         load_button.setObjectName("primary")
         load_button.clicked.connect(self._on_load_file)
+        save_copy_button = QPushButton("Sauvegarder le calculateur (copie)")
+        save_copy_button.setToolTip(
+            "Enregistre une copie du fichier TEL QUE CHARGÉ (non modifié) à l'emplacement "
+            "de votre choix. Une sauvegarde .bak horodatée est aussi créée automatiquement "
+            "à chaque chargement, à côté du fichier d'origine."
+        )
+        save_copy_button.clicked.connect(self._on_save_copy)
         restore_button = QPushButton("Restaurer une sauvegarde .bak")
         restore_button.setToolTip("Recharge un fichier de sauvegarde (retour à l'état d'origine d'un dump).")
         restore_button.clicked.connect(self._on_restore_backup)
@@ -70,6 +118,7 @@ class PatcherTab(QWidget):
         revert_button.setToolTip("Revenir au fichier tel que chargé, en annulant tous les patchs de la session.")
         revert_button.clicked.connect(self._on_revert_original)
         file_buttons.addWidget(load_button)
+        file_buttons.addWidget(save_copy_button)
         file_buttons.addWidget(restore_button)
         file_buttons.addWidget(revert_button)
         self.file_label = QLabel("Aucun fichier chargé.")
@@ -177,13 +226,48 @@ class PatcherTab(QWidget):
         self._reload_definitions()
 
     # ------------------------------------------------------------- chargement
+    def _last_dir(self) -> str:
+        stored = str(app_settings.load_settings().get("last_dir", "") or "")
+        return stored if stored else ""
+
+    def _remember_dir(self, path: Path) -> None:
+        app_settings.save_settings({"last_dir": str(path.parent if path.is_file() else path)})
+
     def _on_load_file(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
-            self, "Ouvrir un fichier ECU", "", "Fichiers ECU (*.bin *.ori *.mpc);;Tous les fichiers (*)"
+            self, "Ouvrir un fichier ECU", self._last_dir(), ECU_FILTER
         )
         if not path:
             return
         self._load_path(Path(path))
+
+    def _on_save_copy(self) -> None:
+        if not self.session.is_loaded:
+            QMessageBox.information(self, "OpenECU Studio", "Chargez d'abord un fichier ECU.")
+            return
+        suggested = str(
+            self.session.file_path.with_name(f"{self.session.file_path.stem}_sauvegarde.bin")
+        )
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Sauvegarder le calculateur (copie non modifiée)",
+            suggested,
+            "Fichier binaire (*.bin)",
+        )
+        if not path:
+            return
+        try:
+            Path(path).write_bytes(self.session.original)
+        except OSError as exc:
+            QMessageBox.critical(self, "Erreur de sauvegarde", str(exc))
+            return
+        self._remember_dir(Path(path))
+        QMessageBox.information(
+            self,
+            "Sauvegarde réussie",
+            f"Copie du calculateur enregistrée :\n{path}\n\n"
+            f"Sauvegarde automatique d'origine :\n{self.session.backup_path}",
+        )
 
     def _on_restore_backup(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
@@ -200,6 +284,17 @@ class PatcherTab(QWidget):
         if not self.session.diffs:
             QMessageBox.information(self, "OpenECU Studio", "Aucune modification à annuler.")
             return
+        answer = QMessageBox.question(
+            self,
+            "Annuler les modifications",
+            f"{len(self.session.diffs)} modification(s) seront annulées : "
+            "le fichier revient à son état tel que chargé.\n\n"
+            "La sauvegarde .bak d'origine est conservée.\n\nConfirmez-vous ?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer != QMessageBox.Yes:
+            return
         self.session.reload_original()
         self._on_scan_dtcs()
         self._update_checksum_label()
@@ -213,6 +308,7 @@ class PatcherTab(QWidget):
             QMessageBox.critical(self, "Erreur de chargement", str(exc))
             return
         self.file_label.setText(f"{path}")
+        self._remember_dir(path)
         fields = self.identity_fields
         fields["Famille détectée"].setText(f"{identity.detected_family} ({identity.confidence})")
         fields["Constructeur ECU"].setText(identity.manufacturer)
@@ -251,6 +347,22 @@ class PatcherTab(QWidget):
         new_vin = self.vin_input.text().strip().upper()
         if len(new_vin) != 17:
             QMessageBox.warning(self, "VIN", "Saisissez un VIN complet de 17 caractères.")
+            return
+        try:
+            vins = self.session.find_vins()
+        except PatchError as exc:
+            QMessageBox.critical(self, "Erreur VIN", str(exc))
+            return
+        occurrences = ", ".join(f"0x{offset:06X}" for offset, _ in vins) or "aucune"
+        answer = QMessageBox.question(
+            self,
+            "Remplacement du VIN — cadre légal",
+            f"Le VIN sera remplacé sur {len(vins)} occurrence(s) du dump : {occurrences}."
+            + "\n\n" + LEGAL_VIN,
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer != QMessageBox.Yes:
             return
         try:
             diffs = self.session.replace_vin(new_vin)
@@ -334,17 +446,31 @@ class PatcherTab(QWidget):
         if not self.session.is_loaded:
             QMessageBox.information(self, "OpenECU Studio", "Chargez d'abord un fichier ECU.")
             return
+        checked = [
+            (checkbox, solution)
+            for checkbox, solution in self._solution_checks
+            if checkbox.isChecked()
+        ]
+        if not checked:
+            QMessageBox.information(self, "OpenECU Studio", "Aucune solution cochée.")
+            return
+        answer = QMessageBox.question(
+            self,
+            "Application de solutions — action irréversible sur le fichier",
+            "Solutions cochées : "
+            + ", ".join(checkbox.text().split("  (")[0] for checkbox, _ in checked)
+            + "\n\n" + LEGAL_ANTIPOLLUTION,
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer != QMessageBox.Yes:
+            return
         applied, errors, total = 0, [], 0
-        for checkbox, solution in self._solution_checks:
-            if not checkbox.isChecked():
-                continue
+        for _checkbox, solution in checked:
             count, solution_errors = self.session.apply_solution(solution)
             applied += 1
             total += count
             errors.extend(solution_errors)
-        if applied == 0:
-            QMessageBox.information(self, "OpenECU Studio", "Aucune solution cochée.")
-            return
         message = f"{applied} solution(s) appliquée(s) — {total} octet(s) modifié(s)."
         if errors:
             message += "\n\nErreurs :\n- " + "\n- ".join(errors)
@@ -394,6 +520,15 @@ class PatcherTab(QWidget):
             QMessageBox.information(self, "OpenECU Studio", "Sélectionnez au moins un DTC dans la liste.")
             return
         entries = [entry for row in rows if (entry := self._entry_at_row(row)) is not None]
+        answer = QMessageBox.question(
+            self,
+            "DTC Remover — masquage de pannes",
+            f"Vous allez désactiver {len(entries)} code(s) défaut du dump." + "\n\n" + LEGAL_DTC_DISABLE,
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer != QMessageBox.Yes:
+            return
         diffs = self.session.disable_dtc_entries(entries)
         self._on_scan_dtcs()
         self.dtc_search.setText(self.dtc_search.text())
@@ -430,15 +565,36 @@ class PatcherTab(QWidget):
         if not self.session.is_loaded:
             QMessageBox.information(self, "OpenECU Studio", "Chargez d'abord un fichier ECU.")
             return
-        suggested = str(self.session.file_path.with_name(self.session.file_path.stem + "_patched.bin"))
-        path, _ = QFileDialog.getSaveFileName(self, "Exporter le fichier patché", suggested, "Fichier binaire (*.bin)")
+        suggested = str(
+            self.session.file_path.with_name(self.session.file_path.stem + "_patched.bin")
+        )
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Exporter le fichier patché", suggested, "Fichier binaire (*.bin)"
+        )
         if not path:
             return
+        warnings = self.session.checksum_warnings()
+        if warnings:
+            answer = QMessageBox.question(
+                self,
+                "Export — ATTENTION CHECKSUM",
+                "Le calcul des checksums signale des écarts :\n- "
+                + "\n- ".join(warnings)
+                + "\n\nUn fichier flashé avec un checksum incorrect peut être REFUSÉ "
+                "ou rendre le calculateur INUTILISABLE. Les algorithmes propriétaires "
+                "(EDC17… ) ne sont pas recalculés par cette application : utilisez un "
+                "outil de checksum dédié avant tout flash.\n\nConfirmez-vous l'export ?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No,
+            )
+            if answer != QMessageBox.Yes:
+                return
         try:
             exported, warnings = self.session.export(Path(path))
         except (OSError, PatchError) as exc:
             QMessageBox.critical(self, "Erreur d'export", str(exc))
             return
+        self._remember_dir(Path(exported))
         message = f"Fichier exporté :\n{exported}\n\n{len(self.session.diffs)} modification(s) appliquée(s)."
         if warnings:
             message += "\n\n⚠ AVERTISSEMENTS CHECKSUM :\n- " + "\n- ".join(warnings)

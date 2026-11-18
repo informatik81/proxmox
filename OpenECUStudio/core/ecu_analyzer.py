@@ -112,6 +112,42 @@ _BOSCH_PART_RE = re.compile(rb"0281[0-9]{6}")
 _CONTINENTAL_PART_RE = re.compile(rb"S1[0-9]{8}")
 _ASCII_STRING_RE = re.compile(rb"[\x20-\x7E]{6,}")
 
+# VIN ISO 3779 : 17 caractères, lettres I/O/Q interdites. Pas d'exigence de
+# délimitation : dans un dump, le VIN est souvent noyé entre des octets
+# binaires. Le risque de faux positif est négligeable ((33/256)^17) et les
+# occurrences détectées restent de toute façon revues par l'utilisateur.
+_VIN_RE = re.compile(rb"[A-HJ-NPR-Za-hj-npr-z0-9]{17}")
+
+# Translittération ISO 3779 (valeur de chaque caractère pour le check digit)
+_VIN_VALUES: dict = {str(d): d for d in range(10)}
+_VIN_VALUES.update(
+    {c: v for c, v in zip("ABCDEFGH", range(1, 9))}
+)
+_VIN_VALUES.update({c: v for c, v in zip("JKLMN", range(1, 6))})
+_VIN_VALUES["P"] = 7
+_VIN_VALUES["R"] = 9
+_VIN_VALUES.update({c: v for c, v in zip("STUVWXYZ", range(2, 10))})
+_VIN_WEIGHTS = (8, 7, 6, 5, 4, 3, 2, 10, 0, 9, 8, 7, 6, 5, 4, 3, 2)
+
+
+def vin_check_digit_valid(vin: str) -> Optional[bool]:
+    """Vérifie le caractère de contrôle ISO 3779 (position 9).
+
+    Informationnel : les VIN européens n'utilisent pas toujours ce contrôle
+    (valeur arbitraire en position 9). ``None`` si le VIN contient des
+    caractères hors table.
+    """
+    vin = vin.upper()
+    if len(vin) != 17:
+        return None
+    try:
+        total = sum(_VIN_VALUES[c] * w for c, w in zip(vin, _VIN_WEIGHTS))
+    except KeyError:
+        return None
+    remainder = total % 11
+    expected = "X" if remainder == 10 else str(remainder)
+    return vin[8] == expected
+
 
 # --------------------------------------------------------------------------
 # Résultat d'analyse
@@ -221,6 +257,20 @@ class EcuAnalyzer:
         return results
 
     @staticmethod
+    def find_vins(data: bytes) -> List[Tuple[int, str]]:
+        """Détecte les VIN potentiels (17 caractères ISO 3779) dans le dump.
+
+        Retourne une liste (offset, VIN). Le VIN est fréquemment stocké en
+        plusieurs exemplaires (flash principale, zone immo/appairage) : tous
+        les emplacements doivent être modifiés ensemble pour rester cohérent.
+        """
+        results: List[Tuple[int, str]] = []
+        for match in _VIN_RE.finditer(data):
+            vin = match.group(0).decode("ascii").upper()
+            results.append((match.start(), vin))
+        return results
+
+    @staticmethod
     def extract_part_numbers(data: bytes) -> List[str]:
         """Recherche les numéros de pièce Bosch (02810xxxxxx) / Continental (S1xxxxxxxx)."""
         found: List[str] = []
@@ -254,7 +304,9 @@ class EcuAnalyzer:
                 reason.append(f"taille {identity.size} octets")
             for pattern in signature.id_patterns:
                 if pattern.upper().encode("ascii") in upper_data:
-                    score += 3
+                    # Les chaînes courtes (ex. "MJ9") font trop de faux positifs
+                    # sur des données aléatoires : leur poids dépend de la longueur.
+                    score += 4 if len(pattern) >= 6 else 2 if len(pattern) >= 4 else 1
                     reason.append(f"chaîne '{pattern}'")
             if signature.part_number_regex and re.search(signature.part_number_regex.encode(), data):
                 score += 1
@@ -263,12 +315,12 @@ class EcuAnalyzer:
                 best_score = score
                 best = signature
                 reasons = reason
-        if best is not None and best_score >= 3:
+        if best is not None and best_score >= 4:
             identity.detected_family = best.family
             identity.manufacturer = best.manufacturer
             identity.notes = best.notes
             identity.matched_by = ", ".join(reasons)
-            identity.confidence = "Élevée" if best_score >= 5 else "Moyenne"
+            identity.confidence = "Élevée" if best_score >= 6 else "Moyenne"
         else:
             identity.matched_by = "aucune signature fiable"
             identity.confidence = "Aucune"

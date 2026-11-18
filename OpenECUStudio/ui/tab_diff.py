@@ -55,7 +55,7 @@ class DiffViewerTab(QWidget):
         group_layout.addLayout(toolbar)
 
         self.table = QTableWidget(0, 3)
-        self.table.setHorizontalHeaderLabels(["Offset", "Original", "Modifié"])
+        self.table.setHorizontalHeaderLabels(["Offset", "D'origine", "Modifié"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.setFont(mono_font())
@@ -108,10 +108,29 @@ class DiffViewerTab(QWidget):
         if not self._diffs:
             QMessageBox.information(self, "OpenECU Studio", "Aucune modification à exporter.")
             return
-        suggested = str(self.session.file_path.with_name(self.session.file_path.stem + "_patched.bin"))
-        path, _ = QFileDialog.getSaveFileName(self, "Exporter le fichier patché", suggested, "Fichier binaire (*.bin)")
+        suggested = str(
+            self.session.file_path.with_name(self.session.file_path.stem + "_patched.bin")
+        )
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Exporter le fichier patché", suggested, "Fichier binaire (*.bin)"
+        )
         if not path:
             return
+        warnings = self.session.checksum_warnings()
+        if warnings:
+            answer = QMessageBox.question(
+                self,
+                "Export — ATTENTION CHECKSUM",
+                "Le calcul des checksums signale des écarts :\n- "
+                + "\n- ".join(warnings)
+                + "\n\nUn fichier flashé avec un checksum incorrect peut rendre le "
+                "calculateur INUTILISABLE. Validez les checksums avec un outil dédié "
+                "avant tout flash.\n\nConfirmez-vous l'export ?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No,
+            )
+            if answer != QMessageBox.Yes:
+                return
         try:
             exported, warnings = self.session.export(Path(path))
         except (OSError, PatchError) as exc:

@@ -1,0 +1,31 @@
+name: OpenECU Studio tests
+
+on:
+  push:
+    paths:
+      - "OpenECUStudio/**"
+  pull_request:
+    paths:
+      - "OpenECUStudio/**"
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: OpenECUStudio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Installation des dépendances de test
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pyflakes
+      - name: Vérification pyflakes
+        run: |
+          python -m pyflakes core/ ui/ main.py tools/ tests/
+      - name: Suite de tests
+        run: |
+          python -m pytest tests -q
